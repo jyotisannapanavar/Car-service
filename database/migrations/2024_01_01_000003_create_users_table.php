@@ -4,28 +4,38 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('organization_id')->constrained()->onDelete('cascade');
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null');
+
+            // org_id instead of organization_id (nullable for SET NULL)
+            $table->foreignId('org_id')
+                ->nullable()
+                ->constrained('organizations')
+                ->nullOnDelete();
+
+            // branch_id already correct
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
+
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin', 'branch_manager', 'staff'])->default('staff');
             $table->boolean('is_active')->default(true);
+
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('organization_id');
+            // Indexes
+            $table->index('org_id');
             $table->index('branch_id');
-            $table->index('role');
         });
     }
 
