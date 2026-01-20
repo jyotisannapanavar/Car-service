@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\CustomerVehicleRequest;
 use App\Services\CustomerVehicleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,25 +33,33 @@ class CustomerVehicleController extends Controller
      */
     public function index(Request $request, int $customerId): JsonResponse
     {
-        $result = $this->customerVehicleService->index(
-            $customerId,
-            $request->user()->org_id,
-            $request->input('per_page', 15)
-        );
+        try {
+            $result = $this->customerVehicleService->index(
+                $customerId,
+                $request->user()->org_id,
+                $request->input('per_page', 15)
+            );
 
-        $response = [
-            'success' => $result['success'],
-            'message' => $result['message'],
-        ];
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
 
-        if (isset($result['data'])) {
-            $response['data'] = $result['data'];
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-        if (isset($result['pagination'])) {
-            $response['pagination'] = $result['pagination'];
-        }
-
-        return response()->json($response, $result['status']);
     }
 
     /**
@@ -83,18 +90,38 @@ class CustomerVehicleController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(CustomerVehicleRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $this->customerVehicleService->store(
-            $request->validated(),
-            $request->user()->org_id
-        );
+        try {
+            $validated = $request->validate([
+                'customer_id' => ['required', 'exists:customers,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
+                'vehicle_model_id' => ['required', 'exists:vehicle_models,id'],
+                'registration_number' => ['nullable', 'string', 'max:50'],
+                'color' => ['nullable', 'string', 'max:50'],
+                'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+                'notes' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->customerVehicleService->store(
+                $validated,
+                $request->user()->org_id
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -116,17 +143,25 @@ class CustomerVehicleController extends Controller
      */
     public function show(Request $request, int $customerId, int $id): JsonResponse
     {
-        $result = $this->customerVehicleService->show(
-            $customerId,
-            $id,
-            $request->user()->org_id
-        );
+        try {
+            $result = $this->customerVehicleService->show(
+                $customerId,
+                $id,
+                $request->user()->org_id
+            );
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -160,20 +195,40 @@ class CustomerVehicleController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(CustomerVehicleRequest $request, int $customerId, int $id): JsonResponse
+    public function update(Request $request, int $customerId, int $id): JsonResponse
     {
-        $result = $this->customerVehicleService->update(
-            $customerId,
-            $id,
-            $request->user()->org_id,
-            $request->validated()
-        );
+        try {
+            $validated = $request->validate([
+                'customer_id' => ['required', 'exists:customers,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
+                'vehicle_model_id' => ['required', 'exists:vehicle_models,id'],
+                'registration_number' => ['nullable', 'string', 'max:50'],
+                'color' => ['nullable', 'string', 'max:50'],
+                'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+                'notes' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->customerVehicleService->update(
+                $customerId,
+                $id,
+                $request->user()->org_id,
+                $validated
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -195,16 +250,24 @@ class CustomerVehicleController extends Controller
      */
     public function destroy(Request $request, int $customerId, int $id): JsonResponse
     {
-        $result = $this->customerVehicleService->destroy(
-            $customerId,
-            $id,
-            $request->user()->org_id
-        );
+        try {
+            $result = $this->customerVehicleService->destroy(
+                $customerId,
+                $id,
+                $request->user()->org_id
+            );
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }

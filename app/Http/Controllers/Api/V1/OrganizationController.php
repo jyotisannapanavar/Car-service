@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\OrganizationRequest;
 use App\Services\OrganizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use OpenApi\Annotations as OA;
 
 class OrganizationController extends Controller
@@ -33,21 +33,29 @@ class OrganizationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $result = $this->organizationService->index($request->input('per_page', 15));
+        try {
+            $result = $this->organizationService->index($request->input('per_page', 15));
 
-        $response = [
-            'success' => $result['success'],
-            'message' => $result['message'],
-        ];
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
 
-        if (isset($result['data'])) {
-            $response['data'] = $result['data'];
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-        if (isset($result['pagination'])) {
-            $response['pagination'] = $result['pagination'];
-        }
-
-        return response()->json($response, $result['status']);
     }
 
     /**
@@ -79,15 +87,37 @@ class OrganizationController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(OrganizationRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $this->organizationService->store($request->validated());
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('organizations', 'email'),
+                ],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'logo' => ['nullable', 'string', 'max:255'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->organizationService->store($validated);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -109,13 +139,21 @@ class OrganizationController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $result = $this->organizationService->show($id);
+        try {
+            $result = $this->organizationService->show($id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -150,15 +188,37 @@ class OrganizationController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(OrganizationRequest $request, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
-        $result = $this->organizationService->update($id, $request->validated());
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('organizations', 'email')->ignore($id),
+                ],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'logo' => ['nullable', 'string', 'max:255'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->organizationService->update($id, $validated);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -180,12 +240,20 @@ class OrganizationController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $result = $this->organizationService->destroy($id);
+        try {
+            $result = $this->organizationService->destroy($id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }

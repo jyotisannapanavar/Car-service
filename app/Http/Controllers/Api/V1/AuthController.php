@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\LoginRequest;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -84,19 +83,33 @@ class AuthController extends Controller
      *     )
      * )
      */
-    public function login(LoginRequest $request): JsonResponse
+    public function login(Request $request): JsonResponse
     {
-        $result = $this->authService->login(
-            $request->email,
-            $request->password,
-            $request->device_name ?? 'api'
-        );
+        try {
+            $validated = $request->validate([
+                'email' => ['required', 'email'],
+                'password' => ['required', 'string'],
+                'device_name' => ['sometimes', 'string', 'max:255'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->authService->login(
+                $validated['email'],
+                $validated['password'],
+                $validated['device_name'] ?? 'api'
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -125,13 +138,21 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $result = $this->authService->logout($request->user());
+        try {
+            $result = $this->authService->logout($request->user());
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -170,12 +191,20 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $result = $this->authService->getProfile($request->user());
+        try {
+            $result = $this->authService->getProfile($request->user());
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }

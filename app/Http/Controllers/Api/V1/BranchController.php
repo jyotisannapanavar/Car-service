@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\BranchRequest;
 use App\Services\BranchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,24 +31,32 @@ class BranchController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $result = $this->branchService->index(
-            $request->user()->org_id,
-            $request->input('per_page', 15)
-        );
+        try {
+            $result = $this->branchService->index(
+                $request->user()->org_id,
+                $request->input('per_page', 15)
+            );
 
-        $response = [
-            'success' => $result['success'],
-            'message' => $result['message'],
-        ];
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
 
-        if (isset($result['data'])) {
-            $response['data'] = $result['data'];
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-        if (isset($result['pagination'])) {
-            $response['pagination'] = $result['pagination'];
-        }
-
-        return response()->json($response, $result['status']);
     }
 
     /**
@@ -83,18 +90,36 @@ class BranchController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(BranchRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $this->branchService->store(
-            $request->validated(),
-            $request->user()->org_id
-        );
+        try {
+            $validated = $request->validate([
+                'org_id' => ['required', 'exists:organizations,id'],
+                'name' => ['required', 'string', 'max:255'],
+                'code' => ['nullable', 'string', 'max:50'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->branchService->store(
+                $validated,
+                $request->user()->org_id
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -115,13 +140,21 @@ class BranchController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        $result = $this->branchService->show($id, $request->user()->org_id);
+        try {
+            $result = $this->branchService->show($id, $request->user()->org_id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -153,19 +186,37 @@ class BranchController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(BranchRequest $request, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
-        $result = $this->branchService->update(
-            $id,
-            $request->user()->org_id,
-            $request->validated()
-        );
+        try {
+            $validated = $request->validate([
+                'org_id' => ['required', 'exists:organizations,id'],
+                'name' => ['required', 'string', 'max:255'],
+                'code' => ['nullable', 'string', 'max:50'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->branchService->update(
+                $id,
+                $request->user()->org_id,
+                $validated
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -186,12 +237,20 @@ class BranchController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $result = $this->branchService->destroy($id, $request->user()->org_id);
+        try {
+            $result = $this->branchService->destroy($id, $request->user()->org_id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }

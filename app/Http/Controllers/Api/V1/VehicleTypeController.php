@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\VehicleTypeRequest;
 use App\Services\VehicleTypeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,21 +31,29 @@ class VehicleTypeController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $result = $this->vehicleTypeService->index($request->input('per_page', 15));
+        try {
+            $result = $this->vehicleTypeService->index($request->input('per_page', 15));
 
-        $response = [
-            'success' => $result['success'],
-            'message' => $result['message'],
-        ];
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
 
-        if (isset($result['data'])) {
-            $response['data'] = $result['data'];
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-        if (isset($result['pagination'])) {
-            $response['pagination'] = $result['pagination'];
-        }
-
-        return response()->json($response, $result['status']);
     }
 
     /**
@@ -64,13 +71,21 @@ class VehicleTypeController extends Controller
      */
     public function list(): JsonResponse
     {
-        $result = $this->vehicleTypeService->list();
+        try {
+            $result = $this->vehicleTypeService->list();
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -95,15 +110,29 @@ class VehicleTypeController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(VehicleTypeRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $this->vehicleTypeService->store($request->validated());
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->vehicleTypeService->store($validated);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -124,13 +153,21 @@ class VehicleTypeController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $result = $this->vehicleTypeService->show($id);
+        try {
+            $result = $this->vehicleTypeService->show($id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -158,15 +195,29 @@ class VehicleTypeController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(VehicleTypeRequest $request, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
-        $result = $this->vehicleTypeService->update($id, $request->validated());
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->vehicleTypeService->update($id, $validated);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -187,12 +238,20 @@ class VehicleTypeController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $result = $this->vehicleTypeService->destroy($id);
+        try {
+            $result = $this->vehicleTypeService->destroy($id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }

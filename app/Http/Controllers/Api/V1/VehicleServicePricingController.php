@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\PriceLookupRequest;
-use App\Http\Requests\Api\V1\VehicleServicePricingRequest;
 use App\Services\VehicleServicePricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,27 +35,35 @@ class VehicleServicePricingController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->pricingService->index(
-            $user->org_id,
-            $request->input('branch_id', $user->branch_id),
-            $request->input('service_id'),
-            $request->input('per_page', 15)
-        );
+        try {
+            $user = $request->user();
+            $result = $this->pricingService->index(
+                $user->org_id,
+                $request->input('branch_id', $user->branch_id),
+                $request->input('service_id'),
+                $request->input('per_page', 15)
+            );
 
-        $response = [
-            'success' => $result['success'],
-            'message' => $result['message'],
-        ];
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
 
-        if (isset($result['data'])) {
-            $response['data'] = $result['data'];
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
         }
-        if (isset($result['pagination'])) {
-            $response['pagination'] = $result['pagination'];
-        }
-
-        return response()->json($response, $result['status']);
     }
 
     /**
@@ -88,18 +94,48 @@ class VehicleServicePricingController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function store(VehicleServicePricingRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $this->pricingService->store(
-            $request->validated(),
-            $request->user()->org_id
-        );
+        try {
+            $validated = $request->validate([
+                'branch_id' => ['required', 'exists:branches,id'],
+                'service_id' => ['required', 'exists:services,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
+                'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
+                'price' => ['required', 'numeric', 'min:0'],
+                'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'branch_id.required' => 'Branch is required.',
+                'branch_id.exists' => 'Selected branch does not exist.',
+                'service_id.required' => 'Service is required.',
+                'service_id.exists' => 'Selected service does not exist.',
+                'vehicle_type_id.required' => 'Vehicle type is required.',
+                'vehicle_type_id.exists' => 'Selected vehicle type does not exist.',
+                'vehicle_brand_id.exists' => 'Selected vehicle brand does not exist.',
+                'vehicle_model_id.exists' => 'Selected vehicle model does not exist.',
+                'price.required' => 'Price is required.',
+                'price.numeric' => 'Price must be a number.',
+                'price.min' => 'Price cannot be negative.',
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->pricingService->store(
+                $validated,
+                $request->user()->org_id
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -121,13 +157,21 @@ class VehicleServicePricingController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        $result = $this->pricingService->show($id, $request->user()->org_id);
+        try {
+            $result = $this->pricingService->show($id, $request->user()->org_id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -161,19 +205,49 @@ class VehicleServicePricingController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function update(VehicleServicePricingRequest $request, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
-        $result = $this->pricingService->update(
-            $id,
-            $request->validated(),
-            $request->user()->org_id
-        );
+        try {
+            $validated = $request->validate([
+                'branch_id' => ['required', 'exists:branches,id'],
+                'service_id' => ['required', 'exists:services,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
+                'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
+                'price' => ['required', 'numeric', 'min:0'],
+                'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'branch_id.required' => 'Branch is required.',
+                'branch_id.exists' => 'Selected branch does not exist.',
+                'service_id.required' => 'Service is required.',
+                'service_id.exists' => 'Selected service does not exist.',
+                'vehicle_type_id.required' => 'Vehicle type is required.',
+                'vehicle_type_id.exists' => 'Selected vehicle type does not exist.',
+                'vehicle_brand_id.exists' => 'Selected vehicle brand does not exist.',
+                'vehicle_model_id.exists' => 'Selected vehicle model does not exist.',
+                'price.required' => 'Price is required.',
+                'price.numeric' => 'Price must be a number.',
+                'price.min' => 'Price cannot be negative.',
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->pricingService->update(
+                $id,
+                $validated,
+                $request->user()->org_id
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -195,13 +269,21 @@ class VehicleServicePricingController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $result = $this->pricingService->destroy($id, $request->user()->org_id);
+        try {
+            $result = $this->pricingService->destroy($id, $request->user()->org_id);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -234,18 +316,34 @@ class VehicleServicePricingController extends Controller
      *     @OA\Response(response=404, description="No pricing found")
      * )
      */
-    public function lookup(PriceLookupRequest $request): JsonResponse
+    public function lookup(Request $request): JsonResponse
     {
-        $result = $this->pricingService->lookup(
-            $request->validated(),
-            $request->user()->org_id
-        );
+        try {
+            $validated = $request->validate([
+                'branch_id' => ['required', 'exists:branches,id'],
+                'service_id' => ['required', 'exists:services,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
+                'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
+            ]);
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            $result = $this->pricingService->lookup(
+                $validated,
+                $request->user()->org_id
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 
     /**
@@ -268,17 +366,25 @@ class VehicleServicePricingController extends Controller
      */
     public function getByService(Request $request, int $serviceId): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->pricingService->getByService(
-            $serviceId,
-            $user->org_id,
-            $request->input('branch_id', $user->branch_id)
-        );
+        try {
+            $user = $request->user();
+            $result = $this->pricingService->getByService(
+                $serviceId,
+                $user->org_id,
+                $request->input('branch_id', $user->branch_id)
+            );
 
-        return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data'] ?? null,
-        ], $result['status']);
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
     }
 }
