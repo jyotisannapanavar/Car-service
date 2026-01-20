@@ -4,19 +4,38 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('vehicle_models', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vehicle_brand_id')->constrained()->onDelete('cascade');
+
+            // Organization & Branch
+            $table->foreignId('org_id')
+                ->nullable()
+                ->constrained('organizations')
+                ->nullOnDelete();
+
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
+
+            // Vehicle Brand
+            $table->foreignId('vehicle_brand_id')
+                ->constrained('vehicle_brands')
+                ->cascadeOnDelete();
+
             $table->string('name');
             $table->string('year')->nullable();
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
             $table->softDeletes();
 
+            // Indexes
+            $table->index('org_id');
+            $table->index('branch_id');
             $table->index('vehicle_brand_id');
         });
     }

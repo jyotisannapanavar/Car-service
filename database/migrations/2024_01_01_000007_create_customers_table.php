@@ -4,25 +4,47 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('organization_id')->constrained()->onDelete('cascade');
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null');
+
+            // Organization
+            $table->foreignId('org_id')
+                ->nullable()
+                ->constrained('organizations')
+                ->nullOnDelete();
+
+            // Branch
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained('branches')
+                ->nullOnDelete();
+
+            // Linked user (optional login-based customer)
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('phone');
             $table->text('address')->nullable();
+
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index('organization_id');
+            // Indexes
+            $table->index('org_id');
             $table->index('branch_id');
-            $table->unique(['organization_id', 'phone']);
+            $table->index('user_id');
+
+            // Unique customer per org by phone
+            $table->unique(['org_id', 'phone']);
         });
     }
 
