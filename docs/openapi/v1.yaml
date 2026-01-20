@@ -1,0 +1,2455 @@
+openapi: 3.0.3
+info:
+  title: Car Service API
+  description: API for managing car service operations including organizations, branches, users, vehicles, services, customers, and pricing.
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: /api/v1
+    description: API Version 1
+
+security:
+  - sanctum: []
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Organizations
+    description: Organization management
+  - name: Branches
+    description: Branch management
+  - name: Users
+    description: User management
+  - name: Vehicle Types
+    description: Vehicle type management
+  - name: Vehicle Brands
+    description: Vehicle brand management
+  - name: Vehicle Models
+    description: Vehicle model management
+  - name: Services
+    description: Service management
+  - name: Customers
+    description: Customer management
+  - name: Customer Vehicles
+    description: Customer vehicle management
+  - name: Pricing
+    description: Vehicle service pricing management
+
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive access token
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@carservice.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Revoke current access token
+      operationId: logout
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Get authenticated user's profile information
+      operationId: me
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /organizations:
+    get:
+      tags:
+        - Organizations
+      summary: List all organizations
+      description: Get paginated list of all organizations
+      operationId: organizationsIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Organizations
+      summary: Create organization
+      description: Create a new organization
+      operationId: organizationsStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationInput'
+      responses:
+        '201':
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /organizations/{id}:
+    get:
+      tags:
+        - Organizations
+      summary: Get organization
+      description: Get organization details by ID
+      operationId: organizationsShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Organization retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Organizations
+      summary: Update organization
+      description: Update organization details
+      operationId: organizationsUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationInput'
+      responses:
+        '200':
+          description: Organization updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Organizations
+      summary: Delete organization
+      description: Soft delete an organization
+      operationId: organizationsDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Organization deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /branches:
+    get:
+      tags:
+        - Branches
+      summary: List branches
+      description: Get paginated list of branches for current organization
+      operationId: branchesIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Branches retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Branches
+      summary: Create branch
+      description: Create a new branch for the organization
+      operationId: branchesStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchInput'
+      responses:
+        '201':
+          description: Branch created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /branches/{id}:
+    get:
+      tags:
+        - Branches
+      summary: Get branch
+      description: Get branch details by ID
+      operationId: branchesShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Branch retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Branch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Branches
+      summary: Update branch
+      description: Update branch details
+      operationId: branchesUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchInput'
+      responses:
+        '200':
+          description: Branch updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Branch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Branches
+      summary: Delete branch
+      description: Soft delete a branch
+      operationId: branchesDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Branch deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Branch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Get paginated list of users
+      operationId: usersIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: branch_id
+          in: query
+          description: Filter by branch
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Users
+      summary: Create user
+      description: Create a new staff user
+      operationId: usersStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user
+      description: Get user details by ID
+      operationId: usersShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Update user details
+      operationId: usersUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateInput'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Soft delete a user
+      operationId: usersDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Cannot delete own account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-types:
+    get:
+      tags:
+        - Vehicle Types
+      summary: List vehicle types
+      description: Get paginated list of vehicle types
+      operationId: vehicleTypesIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Vehicle types retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Vehicle Types
+      summary: Create vehicle type
+      description: Create a new vehicle type
+      operationId: vehicleTypesStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleTypeInput'
+      responses:
+        '201':
+          description: Vehicle type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-types/list:
+    get:
+      tags:
+        - Vehicle Types
+      summary: List all vehicle types
+      description: Get all vehicle types without pagination
+      operationId: vehicleTypesList
+      responses:
+        '200':
+          description: Vehicle types retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-types/{id}:
+    get:
+      tags:
+        - Vehicle Types
+      summary: Get vehicle type
+      description: Get vehicle type details by ID
+      operationId: vehicleTypesShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle type retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Vehicle Types
+      summary: Update vehicle type
+      description: Update vehicle type details
+      operationId: vehicleTypesUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleTypeInput'
+      responses:
+        '200':
+          description: Vehicle type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Vehicle Types
+      summary: Delete vehicle type
+      description: Soft delete a vehicle type
+      operationId: vehicleTypesDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle type deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-brands:
+    get:
+      tags:
+        - Vehicle Brands
+      summary: List vehicle brands
+      description: Get paginated list of vehicle brands
+      operationId: vehicleBrandsIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: vehicle_type_id
+          in: query
+          description: Filter by vehicle type
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vehicle brands retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Vehicle Brands
+      summary: Create vehicle brand
+      description: Create a new vehicle brand
+      operationId: vehicleBrandsStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleBrandInput'
+      responses:
+        '201':
+          description: Vehicle brand created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-brands/by-type/{vehicleTypeId}:
+    get:
+      tags:
+        - Vehicle Brands
+      summary: List brands by vehicle type
+      description: Get all vehicle brands for a specific vehicle type
+      operationId: vehicleBrandsListByType
+      parameters:
+        - name: vehicleTypeId
+          in: path
+          required: true
+          description: Vehicle Type ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vehicle brands retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-brands/{id}:
+    get:
+      tags:
+        - Vehicle Brands
+      summary: Get vehicle brand
+      description: Get vehicle brand details by ID
+      operationId: vehicleBrandsShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle brand retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle brand not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Vehicle Brands
+      summary: Update vehicle brand
+      description: Update vehicle brand details
+      operationId: vehicleBrandsUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleBrandInput'
+      responses:
+        '200':
+          description: Vehicle brand updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle brand not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Vehicle Brands
+      summary: Delete vehicle brand
+      description: Soft delete a vehicle brand
+      operationId: vehicleBrandsDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle brand deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle brand not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-models:
+    get:
+      tags:
+        - Vehicle Models
+      summary: List vehicle models
+      description: Get paginated list of vehicle models
+      operationId: vehicleModelsIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: vehicle_brand_id
+          in: query
+          description: Filter by vehicle brand
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vehicle models retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Vehicle Models
+      summary: Create vehicle model
+      description: Create a new vehicle model
+      operationId: vehicleModelsStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleModelInput'
+      responses:
+        '201':
+          description: Vehicle model created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-models/by-brand/{vehicleBrandId}:
+    get:
+      tags:
+        - Vehicle Models
+      summary: List models by vehicle brand
+      description: Get all vehicle models for a specific vehicle brand
+      operationId: vehicleModelsListByBrand
+      parameters:
+        - name: vehicleBrandId
+          in: path
+          required: true
+          description: Vehicle Brand ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vehicle models retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vehicle-models/{id}:
+    get:
+      tags:
+        - Vehicle Models
+      summary: Get vehicle model
+      description: Get vehicle model details by ID
+      operationId: vehicleModelsShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle model retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Vehicle Models
+      summary: Update vehicle model
+      description: Update vehicle model details
+      operationId: vehicleModelsUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleModelInput'
+      responses:
+        '200':
+          description: Vehicle model updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Vehicle Models
+      summary: Delete vehicle model
+      description: Soft delete a vehicle model
+      operationId: vehicleModelsDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Vehicle model deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vehicle model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services:
+    get:
+      tags:
+        - Services
+      summary: List services
+      description: Get paginated list of services
+      operationId: servicesIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: branch_id
+          in: query
+          description: Filter by branch
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Services retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Services
+      summary: Create service
+      description: Create a new service
+      operationId: servicesStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceInput'
+      responses:
+        '201':
+          description: Service created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services/by-branch/{branchId}:
+    get:
+      tags:
+        - Services
+      summary: List services by branch
+      description: Get all services for a specific branch
+      operationId: servicesListByBranch
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          description: Branch ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Services retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services/{id}:
+    get:
+      tags:
+        - Services
+      summary: Get service
+      description: Get service details by ID
+      operationId: servicesShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Service retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Services
+      summary: Update service
+      description: Update service details
+      operationId: servicesUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceInput'
+      responses:
+        '200':
+          description: Service updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Services
+      summary: Delete service
+      description: Soft delete a service
+      operationId: servicesDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Service deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: List customers
+      description: Get paginated list of customers
+      operationId: customersIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: branch_id
+          in: query
+          description: Filter by branch
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Search by name/phone/email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Customers
+      summary: Create customer
+      description: Create a new customer
+      operationId: customersStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/search:
+    get:
+      tags:
+        - Customers
+      summary: Search customer by phone
+      description: Find a customer by phone number
+      operationId: customersSearchByPhone
+      parameters:
+        - name: phone
+          in: query
+          required: true
+          description: Phone number
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Phone number is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/{id}:
+    get:
+      tags:
+        - Customers
+      summary: Get customer
+      description: Get customer details by ID
+      operationId: customersShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Customers
+      summary: Update customer
+      description: Update customer details
+      operationId: customersUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Customers
+      summary: Delete customer
+      description: Soft delete a customer
+      operationId: customersDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Customer deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/{customerId}/vehicles:
+    get:
+      tags:
+        - Customer Vehicles
+      summary: List customer vehicles
+      description: Get paginated list of vehicles for a customer
+      operationId: customerVehiclesIndex
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Customer ID
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Customer vehicles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customer-vehicles:
+    post:
+      tags:
+        - Customer Vehicles
+      summary: Create customer vehicle
+      description: Add a new vehicle for a customer
+      operationId: customerVehiclesStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerVehicleInput'
+      responses:
+        '201':
+          description: Customer vehicle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/{customerId}/vehicles/{vehicleId}:
+    get:
+      tags:
+        - Customer Vehicles
+      summary: Get customer vehicle
+      description: Get customer vehicle details by ID
+      operationId: customerVehiclesShow
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Customer ID
+          schema:
+            type: integer
+        - name: vehicleId
+          in: path
+          required: true
+          description: Vehicle ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer vehicle retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer or vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Customer Vehicles
+      summary: Update customer vehicle
+      description: Update customer vehicle details
+      operationId: customerVehiclesUpdate
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Customer ID
+          schema:
+            type: integer
+        - name: vehicleId
+          in: path
+          required: true
+          description: Vehicle ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerVehicleInput'
+      responses:
+        '200':
+          description: Customer vehicle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer or vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Customer Vehicles
+      summary: Delete customer vehicle
+      description: Soft delete a customer vehicle
+      operationId: customerVehiclesDestroy
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Customer ID
+          schema:
+            type: integer
+        - name: vehicleId
+          in: path
+          required: true
+          description: Vehicle ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer vehicle deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer or vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing:
+    get:
+      tags:
+        - Pricing
+      summary: List pricing rules
+      description: Get paginated list of vehicle service pricing rules
+      operationId: pricingIndex
+      parameters:
+        - $ref: '#/components/parameters/PerPage'
+        - name: branch_id
+          in: query
+          description: Filter by branch
+          schema:
+            type: integer
+        - name: service_id
+          in: query
+          description: Filter by service
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pricing retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Pricing
+      summary: Create pricing rule
+      description: Create a new vehicle service pricing rule
+      operationId: pricingStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingInput'
+      responses:
+        '201':
+          description: Pricing created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate pricing rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing/lookup:
+    get:
+      tags:
+        - Pricing
+      summary: Lookup price
+      description: Find the best matching price for a service and vehicle combination. Uses hierarchical lookup (exact model, brand level, type level).
+      operationId: pricingLookup
+      parameters:
+        - name: branch_id
+          in: query
+          required: true
+          description: Branch ID
+          schema:
+            type: integer
+        - name: service_id
+          in: query
+          required: true
+          description: Service ID
+          schema:
+            type: integer
+        - name: vehicle_type_id
+          in: query
+          required: true
+          description: Vehicle Type ID
+          schema:
+            type: integer
+        - name: vehicle_brand_id
+          in: query
+          description: Vehicle Brand ID (optional)
+          schema:
+            type: integer
+        - name: vehicle_model_id
+          in: query
+          description: Vehicle Model ID (optional)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Price found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceLookupResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No pricing found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing/by-service/{serviceId}:
+    get:
+      tags:
+        - Pricing
+      summary: Get pricing by service
+      description: Get all pricing rules for a specific service
+      operationId: pricingGetByService
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          description: Service ID
+          schema:
+            type: integer
+        - name: branch_id
+          in: query
+          description: Branch ID (uses user's branch if not provided)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pricing retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Branch ID is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing/{id}:
+    get:
+      tags:
+        - Pricing
+      summary: Get pricing rule
+      description: Get pricing rule details by ID
+      operationId: pricingShow
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Pricing retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pricing not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Pricing
+      summary: Update pricing rule
+      description: Update pricing rule details
+      operationId: pricingUpdate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingInput'
+      responses:
+        '200':
+          description: Pricing updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pricing not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate pricing rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Pricing
+      summary: Delete pricing rule
+      description: Soft delete a pricing rule
+      operationId: pricingDestroy
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Pricing deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pricing not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+      description: Laravel Sanctum Bearer Token
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Resource ID
+      schema:
+        type: integer
+    PerPage:
+      name: per_page
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        default: 15
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation successful
+        data:
+          type: object
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Error message
+        data:
+          type: object
+          nullable: true
+
+    PaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Data retrieved successfully
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            current_page:
+              type: integer
+              example: 1
+            last_page:
+              type: integer
+              example: 10
+            per_page:
+              type: integer
+              example: 15
+            total:
+              type: integer
+              example: 150
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login successful
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                name:
+                  type: string
+                  example: Admin User
+                email:
+                  type: string
+                  example: admin@carservice.com
+            token:
+              type: string
+              example: 1|abc123xyz...
+
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User profile retrieved
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Admin User
+            email:
+              type: string
+              example: admin@carservice.com
+            phone:
+              type: string
+              example: "+1234567890"
+            is_active:
+              type: boolean
+              example: true
+            organization:
+              type: object
+            branch:
+              type: object
+
+    PriceLookupResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Price found
+        data:
+          type: object
+          properties:
+            pricing:
+              type: object
+            price:
+              type: number
+              format: float
+              example: 49.99
+            match_type:
+              type: string
+              enum:
+                - exact_model
+                - brand_level
+                - type_level
+              example: exact_model
+
+    OrganizationInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: ABC Car Wash
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: info@abccarwash.com
+        phone:
+          type: string
+          maxLength: 20
+          example: "+1234567890"
+        address:
+          type: string
+          example: 123 Main St
+        is_active:
+          type: boolean
+          example: true
+
+    BranchInput:
+      type: object
+      required:
+        - org_id
+        - name
+      properties:
+        org_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: Downtown Branch
+        code:
+          type: string
+          maxLength: 50
+          example: DT001
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+        address:
+          type: string
+        is_active:
+          type: boolean
+          example: true
+
+    UserInput:
+      type: object
+      required:
+        - org_id
+        - name
+        - email
+        - password
+        - role
+      properties:
+        org_id:
+          type: integer
+          example: 1
+        branch_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: John Doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: john@example.com
+        phone:
+          type: string
+          maxLength: 20
+          example: "+1234567890"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: password123
+        role:
+          type: string
+          enum:
+            - admin
+            - branch_manager
+            - staff
+          example: staff
+        is_active:
+          type: boolean
+          example: true
+
+    UserUpdateInput:
+      type: object
+      required:
+        - org_id
+        - name
+        - email
+        - role
+      properties:
+        org_id:
+          type: integer
+          example: 1
+        branch_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: John Doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: john@example.com
+        phone:
+          type: string
+          maxLength: 20
+          example: "+1234567890"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Optional - only provide if changing password
+        role:
+          type: string
+          enum:
+            - admin
+            - branch_manager
+            - staff
+          example: staff
+        is_active:
+          type: boolean
+          example: true
+
+    VehicleTypeInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Sedan
+        description:
+          type: string
+        is_active:
+          type: boolean
+          example: true
+
+    VehicleBrandInput:
+      type: object
+      required:
+        - vehicle_type_id
+        - name
+      properties:
+        vehicle_type_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: Toyota
+        logo:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+          example: true
+
+    VehicleModelInput:
+      type: object
+      required:
+        - vehicle_brand_id
+        - name
+      properties:
+        vehicle_brand_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: Camry
+        is_active:
+          type: boolean
+          example: true
+
+    ServiceInput:
+      type: object
+      required:
+        - org_id
+        - name
+        - base_price
+      properties:
+        org_id:
+          type: integer
+          example: 1
+        branch_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 255
+          example: Full Car Wash
+        description:
+          type: string
+        base_price:
+          type: number
+          format: float
+          minimum: 0
+          example: 29.99
+        duration_minutes:
+          type: integer
+          minimum: 1
+          example: 60
+        is_active:
+          type: boolean
+          example: true
+
+    CustomerInput:
+      type: object
+      required:
+        - org_id
+        - name
+        - phone
+      properties:
+        org_id:
+          type: integer
+          example: 1
+        branch_id:
+          type: integer
+        name:
+          type: string
+          maxLength: 255
+          example: John Customer
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+          example: "+1234567890"
+        address:
+          type: string
+        is_active:
+          type: boolean
+          example: true
+
+    CustomerVehicleInput:
+      type: object
+      required:
+        - customer_id
+        - vehicle_type_id
+        - vehicle_brand_id
+        - vehicle_model_id
+      properties:
+        customer_id:
+          type: integer
+          example: 1
+        vehicle_type_id:
+          type: integer
+          example: 1
+        vehicle_brand_id:
+          type: integer
+          example: 1
+        vehicle_model_id:
+          type: integer
+          example: 1
+        registration_number:
+          type: string
+          maxLength: 50
+          example: ABC-1234
+        color:
+          type: string
+          maxLength: 50
+          example: White
+        year:
+          type: integer
+          minimum: 1900
+          maximum: 2100
+          example: 2023
+        notes:
+          type: string
+        is_active:
+          type: boolean
+          example: true
+
+    PricingInput:
+      type: object
+      required:
+        - branch_id
+        - service_id
+        - vehicle_type_id
+        - price
+      properties:
+        branch_id:
+          type: integer
+          example: 1
+        service_id:
+          type: integer
+          example: 1
+        vehicle_type_id:
+          type: integer
+          example: 1
+        vehicle_brand_id:
+          type: integer
+          description: Optional for brand-specific pricing
+        vehicle_model_id:
+          type: integer
+          description: Optional for model-specific pricing
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 49.99
+        is_active:
+          type: boolean
+          example: true
