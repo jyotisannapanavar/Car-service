@@ -3,40 +3,145 @@
 namespace App\Services;
 
 use App\Models\Organization;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class OrganizationService
 {
-    public function getAll(int $perPage = 15): LengthAwarePaginator
+    public function index(int $perPage = 15): array
     {
-        return Organization::orderBy('name')->paginate($perPage);
+        try {
+            $organizations = Organization::orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Organizations retrieved successfully',
+                'data' => $organizations->items(),
+                'pagination' => [
+                    'current_page' => $organizations->currentPage(),
+                    'total_pages' => $organizations->lastPage(),
+                    'per_page' => $organizations->perPage(),
+                    'total' => $organizations->total(),
+                    'next_page_url' => $organizations->nextPageUrl(),
+                    'prev_page_url' => $organizations->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve organizations: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function getAllWithoutPagination(): Collection
+    public function store(array $data): array
     {
-        return Organization::orderBy('name')->get();
+        try {
+            $organization = Organization::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Organization created successfully',
+                'data' => $organization,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create organization: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?Organization
+    public function show(int $id): array
     {
-        return Organization::find($id);
+        try {
+            $organization = Organization::find($id);
+
+            if (! $organization) {
+                return [
+                    'success' => false,
+                    'message' => 'Organization not found',
+                    'status' => 404,
+                ];
+            }
+
+            $organization->load(['branches', 'users']);
+
+            return [
+                'success' => true,
+                'message' => 'Organization retrieved successfully',
+                'data' => $organization,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve organization: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): Organization
+    public function update(int $id, array $data): array
     {
-        return Organization::create($data);
+        try {
+            $organization = Organization::find($id);
+
+            if (! $organization) {
+                return [
+                    'success' => false,
+                    'message' => 'Organization not found',
+                    'status' => 404,
+                ];
+            }
+
+            $organization->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Organization updated successfully',
+                'data' => $organization->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update organization: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function update(Organization $organization, array $data): Organization
+    public function destroy(int $id): array
     {
-        $organization->update($data);
+        try {
+            $organization = Organization::find($id);
 
-        return $organization->fresh();
-    }
+            if (! $organization) {
+                return [
+                    'success' => false,
+                    'message' => 'Organization not found',
+                    'status' => 404,
+                ];
+            }
 
-    public function delete(Organization $organization): bool
-    {
-        return $organization->delete();
+            $organization->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Organization deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete organization: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

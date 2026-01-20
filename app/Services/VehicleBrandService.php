@@ -3,49 +3,174 @@
 namespace App\Services;
 
 use App\Models\VehicleBrand;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class VehicleBrandService
 {
-    public function getAll(?int $vehicleTypeId = null, int $perPage = 15): LengthAwarePaginator
+    public function index(?int $vehicleTypeId = null, int $perPage = 15): array
     {
-        $query = VehicleBrand::query();
+        try {
+            $query = VehicleBrand::query();
 
-        if ($vehicleTypeId) {
-            $query->where('vehicle_type_id', $vehicleTypeId);
+            if ($vehicleTypeId) {
+                $query->where('vehicle_type_id', $vehicleTypeId);
+            }
+
+            $vehicleBrands = $query->orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brands retrieved successfully',
+                'data' => $vehicleBrands->items(),
+                'pagination' => [
+                    'current_page' => $vehicleBrands->currentPage(),
+                    'total_pages' => $vehicleBrands->lastPage(),
+                    'per_page' => $vehicleBrands->perPage(),
+                    'total' => $vehicleBrands->total(),
+                    'next_page_url' => $vehicleBrands->nextPageUrl(),
+                    'prev_page_url' => $vehicleBrands->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
-
-        return $query->orderBy('name')->paginate($perPage);
     }
 
-    public function getAllByType(int $vehicleTypeId): Collection
+    public function listByType(int $vehicleTypeId): array
     {
-        return VehicleBrand::where('vehicle_type_id', $vehicleTypeId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        try {
+            $vehicleBrands = VehicleBrand::where('vehicle_type_id', $vehicleTypeId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brands retrieved successfully',
+                'data' => $vehicleBrands,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?VehicleBrand
+    public function store(array $data): array
     {
-        return VehicleBrand::find($id);
+        try {
+            $vehicleBrand = VehicleBrand::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brand created successfully',
+                'data' => $vehicleBrand,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create vehicle brand: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): VehicleBrand
+    public function show(int $id): array
     {
-        return VehicleBrand::create($data);
+        try {
+            $vehicleBrand = VehicleBrand::find($id);
+
+            if (! $vehicleBrand) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle brand not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleBrand->load(['vehicleType', 'vehicleModels']);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brand retrieved successfully',
+                'data' => $vehicleBrand,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle brand: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function update(VehicleBrand $vehicleBrand, array $data): VehicleBrand
+    public function update(int $id, array $data): array
     {
-        $vehicleBrand->update($data);
+        try {
+            $vehicleBrand = VehicleBrand::find($id);
 
-        return $vehicleBrand->fresh();
+            if (! $vehicleBrand) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle brand not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleBrand->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brand updated successfully',
+                'data' => $vehicleBrand->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update vehicle brand: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function delete(VehicleBrand $vehicleBrand): bool
+    public function destroy(int $id): array
     {
-        return $vehicleBrand->delete();
+        try {
+            $vehicleBrand = VehicleBrand::find($id);
+
+            if (! $vehicleBrand) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle brand not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleBrand->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle brand deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete vehicle brand: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

@@ -3,40 +3,165 @@
 namespace App\Services;
 
 use App\Models\VehicleType;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class VehicleTypeService
 {
-    public function getAll(int $perPage = 15): LengthAwarePaginator
+    public function index(int $perPage = 15): array
     {
-        return VehicleType::orderBy('name')->paginate($perPage);
+        try {
+            $vehicleTypes = VehicleType::orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle types retrieved successfully',
+                'data' => $vehicleTypes->items(),
+                'pagination' => [
+                    'current_page' => $vehicleTypes->currentPage(),
+                    'total_pages' => $vehicleTypes->lastPage(),
+                    'per_page' => $vehicleTypes->perPage(),
+                    'total' => $vehicleTypes->total(),
+                    'next_page_url' => $vehicleTypes->nextPageUrl(),
+                    'prev_page_url' => $vehicleTypes->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function getAllWithoutPagination(): Collection
+    public function list(): array
     {
-        return VehicleType::where('is_active', true)->orderBy('name')->get();
+        try {
+            $vehicleTypes = VehicleType::where('is_active', true)->orderBy('name')->get();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle types retrieved successfully',
+                'data' => $vehicleTypes,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?VehicleType
+    public function store(array $data): array
     {
-        return VehicleType::find($id);
+        try {
+            $vehicleType = VehicleType::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle type created successfully',
+                'data' => $vehicleType,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create vehicle type: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): VehicleType
+    public function show(int $id): array
     {
-        return VehicleType::create($data);
+        try {
+            $vehicleType = VehicleType::find($id);
+
+            if (! $vehicleType) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle type not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleType->load('vehicleBrands');
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle type retrieved successfully',
+                'data' => $vehicleType,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle type: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function update(VehicleType $vehicleType, array $data): VehicleType
+    public function update(int $id, array $data): array
     {
-        $vehicleType->update($data);
+        try {
+            $vehicleType = VehicleType::find($id);
 
-        return $vehicleType->fresh();
+            if (! $vehicleType) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle type not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleType->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle type updated successfully',
+                'data' => $vehicleType->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update vehicle type: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function delete(VehicleType $vehicleType): bool
+    public function destroy(int $id): array
     {
-        return $vehicleType->delete();
+        try {
+            $vehicleType = VehicleType::find($id);
+
+            if (! $vehicleType) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle type not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleType->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle type deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete vehicle type: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

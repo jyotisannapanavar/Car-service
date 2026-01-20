@@ -3,49 +3,174 @@
 namespace App\Services;
 
 use App\Models\VehicleModel;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class VehicleModelService
 {
-    public function getAll(?int $vehicleBrandId = null, int $perPage = 15): LengthAwarePaginator
+    public function index(?int $vehicleBrandId = null, int $perPage = 15): array
     {
-        $query = VehicleModel::query();
+        try {
+            $query = VehicleModel::query();
 
-        if ($vehicleBrandId) {
-            $query->where('vehicle_brand_id', $vehicleBrandId);
+            if ($vehicleBrandId) {
+                $query->where('vehicle_brand_id', $vehicleBrandId);
+            }
+
+            $vehicleModels = $query->orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle models retrieved successfully',
+                'data' => $vehicleModels->items(),
+                'pagination' => [
+                    'current_page' => $vehicleModels->currentPage(),
+                    'total_pages' => $vehicleModels->lastPage(),
+                    'per_page' => $vehicleModels->perPage(),
+                    'total' => $vehicleModels->total(),
+                    'next_page_url' => $vehicleModels->nextPageUrl(),
+                    'prev_page_url' => $vehicleModels->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
-
-        return $query->orderBy('name')->paginate($perPage);
     }
 
-    public function getAllByBrand(int $vehicleBrandId): Collection
+    public function listByBrand(int $vehicleBrandId): array
     {
-        return VehicleModel::where('vehicle_brand_id', $vehicleBrandId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        try {
+            $vehicleModels = VehicleModel::where('vehicle_brand_id', $vehicleBrandId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle models retrieved successfully',
+                'data' => $vehicleModels,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?VehicleModel
+    public function store(array $data): array
     {
-        return VehicleModel::find($id);
+        try {
+            $vehicleModel = VehicleModel::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle model created successfully',
+                'data' => $vehicleModel,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create vehicle model: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): VehicleModel
+    public function show(int $id): array
     {
-        return VehicleModel::create($data);
+        try {
+            $vehicleModel = VehicleModel::find($id);
+
+            if (! $vehicleModel) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle model not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleModel->load('vehicleBrand.vehicleType');
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle model retrieved successfully',
+                'data' => $vehicleModel,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve vehicle model: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function update(VehicleModel $vehicleModel, array $data): VehicleModel
+    public function update(int $id, array $data): array
     {
-        $vehicleModel->update($data);
+        try {
+            $vehicleModel = VehicleModel::find($id);
 
-        return $vehicleModel->fresh();
+            if (! $vehicleModel) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle model not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleModel->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle model updated successfully',
+                'data' => $vehicleModel->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update vehicle model: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function delete(VehicleModel $vehicleModel): bool
+    public function destroy(int $id): array
     {
-        return $vehicleModel->delete();
+        try {
+            $vehicleModel = VehicleModel::find($id);
+
+            if (! $vehicleModel) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle model not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicleModel->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Vehicle model deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete vehicle model: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

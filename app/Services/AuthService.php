@@ -3,37 +3,104 @@
 namespace App\Services;
 
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
-    public function attemptLogin(string $email, string $password): ?User
+    public function login(string $email, string $password, string $deviceName = 'api'): array
     {
-        $user = User::where('email', $email)->first();
+        try {
+            $user = User::where('email', $email)->first();
 
-        if (! $user || ! Hash::check($password, $user->password)) {
-            return null;
+            if (! $user || ! Hash::check($password, $user->password)) {
+                return [
+                    'success' => false,
+                    'message' => 'Invalid credentials or account is inactive',
+                    'status' => 401,
+                ];
+            }
+
+            if (! $user->is_active) {
+                return [
+                    'success' => false,
+                    'message' => 'Invalid credentials or account is inactive',
+                    'status' => 401,
+                ];
+            }
+
+            $token = $user->createToken($deviceName)->plainTextToken;
+
+            return [
+                'success' => true,
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'org_id' => $user->org_id,
+                        'branch_id' => $user->branch_id,
+                    ],
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Login failed: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
+    }
 
-        if (! $user->is_active) {
-            return null;
+    public function logout(User $user): array
+    {
+        try {
+            $user->currentAccessToken()->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Logged out successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Logout failed: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
-
-        return $user;
     }
 
-    public function createToken(User $user, string $deviceName = 'api'): string
+    public function getProfile(User $user): array
     {
-        return $user->createToken($deviceName)->plainTextToken;
-    }
+        try {
+            $user->load(['organization', 'branch']);
 
-    public function revokeCurrentToken(User $user): void
-    {
-        $user->currentAccessToken()->delete();
-    }
-
-    public function revokeAllTokens(User $user): void
-    {
-        $user->tokens()->delete();
+            return [
+                'success' => true,
+                'message' => 'User profile retrieved',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'is_active' => $user->is_active,
+                    'organization' => $user->organization,
+                    'branch' => $user->branch,
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve profile: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

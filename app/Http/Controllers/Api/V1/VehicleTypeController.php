@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\VehicleTypeRequest;
 use App\Services\VehicleTypeService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class VehicleTypeController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected VehicleTypeService $vehicleTypeService
     ) {}
@@ -35,14 +32,21 @@ class VehicleTypeController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $perPage = $request->input('per_page', 15);
-            $vehicleTypes = $this->vehicleTypeService->getAll($perPage);
+        $result = $this->vehicleTypeService->index($request->input('per_page', 15));
 
-            return $this->paginatedResponse($vehicleTypes, 'Vehicle types retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle types: '.$e->getMessage());
+        $response = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
+
+        if (isset($result['data'])) {
+            $response['data'] = $result['data'];
         }
+        if (isset($result['pagination'])) {
+            $response['pagination'] = $result['pagination'];
+        }
+
+        return response()->json($response, $result['status']);
     }
 
     /**
@@ -60,13 +64,13 @@ class VehicleTypeController extends Controller
      */
     public function list(): JsonResponse
     {
-        try {
-            $vehicleTypes = $this->vehicleTypeService->getAllWithoutPagination();
+        $result = $this->vehicleTypeService->list();
 
-            return $this->successResponse($vehicleTypes, 'Vehicle types retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle types: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -93,13 +97,13 @@ class VehicleTypeController extends Controller
      */
     public function store(VehicleTypeRequest $request): JsonResponse
     {
-        try {
-            $vehicleType = $this->vehicleTypeService->create($request->validated());
+        $result = $this->vehicleTypeService->store($request->validated());
 
-            return $this->createdResponse($vehicleType, 'Vehicle type created successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create vehicle type: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -120,19 +124,13 @@ class VehicleTypeController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        try {
-            $vehicleType = $this->vehicleTypeService->findById($id);
+        $result = $this->vehicleTypeService->show($id);
 
-            if (! $vehicleType) {
-                return $this->notFoundResponse('Vehicle type not found');
-            }
-
-            $vehicleType->load('vehicleBrands');
-
-            return $this->successResponse($vehicleType, 'Vehicle type retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle type: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -162,19 +160,13 @@ class VehicleTypeController extends Controller
      */
     public function update(VehicleTypeRequest $request, int $id): JsonResponse
     {
-        try {
-            $vehicleType = $this->vehicleTypeService->findById($id);
+        $result = $this->vehicleTypeService->update($id, $request->validated());
 
-            if (! $vehicleType) {
-                return $this->notFoundResponse('Vehicle type not found');
-            }
-
-            $vehicleType = $this->vehicleTypeService->update($vehicleType, $request->validated());
-
-            return $this->successResponse($vehicleType, 'Vehicle type updated successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update vehicle type: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -195,18 +187,12 @@ class VehicleTypeController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        try {
-            $vehicleType = $this->vehicleTypeService->findById($id);
+        $result = $this->vehicleTypeService->destroy($id);
 
-            if (! $vehicleType) {
-                return $this->notFoundResponse('Vehicle type not found');
-            }
-
-            $this->vehicleTypeService->delete($vehicleType);
-
-            return $this->successResponse(null, 'Vehicle type deleted successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete vehicle type: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }

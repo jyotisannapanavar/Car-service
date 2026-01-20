@@ -2,53 +2,217 @@
 
 namespace App\Services;
 
+use App\Models\Customer;
 use App\Models\CustomerVehicle;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class CustomerVehicleService
 {
-    public function getAll(int $customerId, int $perPage = 15): LengthAwarePaginator
+    public function index(int $customerId, int $orgId, int $perPage = 15): array
     {
-        return CustomerVehicle::where('customer_id', $customerId)
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        try {
+            $customer = Customer::where('id', $customerId)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicles = CustomerVehicle::where('customer_id', $customerId)
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicles retrieved successfully',
+                'data' => $vehicles->items(),
+                'pagination' => [
+                    'current_page' => $vehicles->currentPage(),
+                    'total_pages' => $vehicles->lastPage(),
+                    'per_page' => $vehicles->perPage(),
+                    'total' => $vehicles->total(),
+                    'next_page_url' => $vehicles->nextPageUrl(),
+                    'prev_page_url' => $vehicles->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve customer vehicles: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function getAllByCustomer(int $customerId): Collection
+    public function store(array $data, int $orgId): array
     {
-        return CustomerVehicle::where('customer_id', $customerId)
-            ->where('is_active', true)
-            ->with(['vehicleType', 'vehicleBrand', 'vehicleModel'])
-            ->get();
+        try {
+            $customer = Customer::where('id', $data['customer_id'])
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer does not belong to your organization',
+                    'status' => 403,
+                ];
+            }
+
+            $vehicle = CustomerVehicle::create($data);
+            $vehicle->load(['vehicleType', 'vehicleBrand', 'vehicleModel']);
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicle created successfully',
+                'data' => $vehicle,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create customer vehicle: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?CustomerVehicle
+    public function show(int $customerId, int $vehicleId, int $orgId): array
     {
-        return CustomerVehicle::find($id);
+        try {
+            $customer = Customer::where('id', $customerId)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicle = CustomerVehicle::where('id', $vehicleId)
+                ->where('customer_id', $customerId)
+                ->first();
+
+            if (! $vehicle) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer vehicle not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicle->load(['customer', 'vehicleType', 'vehicleBrand', 'vehicleModel']);
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicle retrieved successfully',
+                'data' => $vehicle,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve customer vehicle: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findByIdAndCustomer(int $id, int $customerId): ?CustomerVehicle
+    public function update(int $customerId, int $vehicleId, int $orgId, array $data): array
     {
-        return CustomerVehicle::where('id', $id)
-            ->where('customer_id', $customerId)
-            ->first();
+        try {
+            $customer = Customer::where('id', $customerId)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicle = CustomerVehicle::where('id', $vehicleId)
+                ->where('customer_id', $customerId)
+                ->first();
+
+            if (! $vehicle) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer vehicle not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicle->update($data);
+            $vehicle->load(['vehicleType', 'vehicleBrand', 'vehicleModel']);
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicle updated successfully',
+                'data' => $vehicle->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update customer vehicle: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): CustomerVehicle
+    public function destroy(int $customerId, int $vehicleId, int $orgId): array
     {
-        return CustomerVehicle::create($data);
-    }
+        try {
+            $customer = Customer::where('id', $customerId)
+                ->where('org_id', $orgId)
+                ->first();
 
-    public function update(CustomerVehicle $customerVehicle, array $data): CustomerVehicle
-    {
-        $customerVehicle->update($data);
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
 
-        return $customerVehicle->fresh();
-    }
+            $vehicle = CustomerVehicle::where('id', $vehicleId)
+                ->where('customer_id', $customerId)
+                ->first();
 
-    public function delete(CustomerVehicle $customerVehicle): bool
-    {
-        return $customerVehicle->delete();
+            if (! $vehicle) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer vehicle not found',
+                    'status' => 404,
+                ];
+            }
+
+            $vehicle->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicle deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete customer vehicle: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

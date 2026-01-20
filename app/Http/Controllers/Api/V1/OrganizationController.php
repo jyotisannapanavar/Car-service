@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\OrganizationRequest;
 use App\Services\OrganizationService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class OrganizationController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected OrganizationService $organizationService
     ) {}
@@ -36,14 +33,21 @@ class OrganizationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $perPage = $request->input('per_page', 15);
-            $organizations = $this->organizationService->getAll($perPage);
+        $result = $this->organizationService->index($request->input('per_page', 15));
 
-            return $this->paginatedResponse($organizations, 'Organizations retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve organizations: '.$e->getMessage());
+        $response = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
+
+        if (isset($result['data'])) {
+            $response['data'] = $result['data'];
         }
+        if (isset($result['pagination'])) {
+            $response['pagination'] = $result['pagination'];
+        }
+
+        return response()->json($response, $result['status']);
     }
 
     /**
@@ -77,13 +81,13 @@ class OrganizationController extends Controller
      */
     public function store(OrganizationRequest $request): JsonResponse
     {
-        try {
-            $organization = $this->organizationService->create($request->validated());
+        $result = $this->organizationService->store($request->validated());
 
-            return $this->createdResponse($organization, 'Organization created successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create organization: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -105,19 +109,13 @@ class OrganizationController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        try {
-            $organization = $this->organizationService->findById($id);
+        $result = $this->organizationService->show($id);
 
-            if (! $organization) {
-                return $this->notFoundResponse('Organization not found');
-            }
-
-            $organization->load(['branches', 'users']);
-
-            return $this->successResponse($organization, 'Organization retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve organization: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -154,19 +152,13 @@ class OrganizationController extends Controller
      */
     public function update(OrganizationRequest $request, int $id): JsonResponse
     {
-        try {
-            $organization = $this->organizationService->findById($id);
+        $result = $this->organizationService->update($id, $request->validated());
 
-            if (! $organization) {
-                return $this->notFoundResponse('Organization not found');
-            }
-
-            $organization = $this->organizationService->update($organization, $request->validated());
-
-            return $this->successResponse($organization, 'Organization updated successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update organization: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -188,18 +180,12 @@ class OrganizationController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        try {
-            $organization = $this->organizationService->findById($id);
+        $result = $this->organizationService->destroy($id);
 
-            if (! $organization) {
-                return $this->notFoundResponse('Organization not found');
-            }
-
-            $this->organizationService->delete($organization);
-
-            return $this->successResponse(null, 'Organization deleted successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete organization: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }

@@ -3,51 +3,161 @@
 namespace App\Services;
 
 use App\Models\Branch;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class BranchService
 {
-    public function getAll(int $orgId, int $perPage = 15): LengthAwarePaginator
+    public function index(int $orgId, int $perPage = 15): array
     {
-        return Branch::where('org_id', $orgId)
-            ->orderBy('name')
-            ->paginate($perPage);
+        try {
+            $branches = Branch::where('org_id', $orgId)
+                ->orderBy('name')
+                ->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Branches retrieved successfully',
+                'data' => $branches->items(),
+                'pagination' => [
+                    'current_page' => $branches->currentPage(),
+                    'total_pages' => $branches->lastPage(),
+                    'per_page' => $branches->perPage(),
+                    'total' => $branches->total(),
+                    'next_page_url' => $branches->nextPageUrl(),
+                    'prev_page_url' => $branches->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve branches: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function getAllWithoutPagination(int $orgId): Collection
+    public function store(array $data, int $userOrgId): array
     {
-        return Branch::where('org_id', $orgId)
-            ->orderBy('name')
-            ->get();
+        try {
+            if ($data['org_id'] != $userOrgId) {
+                return [
+                    'success' => false,
+                    'message' => 'You can only create branches for your organization',
+                    'status' => 403,
+                ];
+            }
+
+            $branch = Branch::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Branch created successfully',
+                'data' => $branch,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create branch: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?Branch
+    public function show(int $id, int $orgId): array
     {
-        return Branch::find($id);
+        try {
+            $branch = Branch::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $branch) {
+                return [
+                    'success' => false,
+                    'message' => 'Branch not found',
+                    'status' => 404,
+                ];
+            }
+
+            $branch->load(['organization', 'users', 'services']);
+
+            return [
+                'success' => true,
+                'message' => 'Branch retrieved successfully',
+                'data' => $branch,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve branch: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findByIdAndOrganization(int $id, int $orgId): ?Branch
+    public function update(int $id, int $orgId, array $data): array
     {
-        return Branch::where('id', $id)
-            ->where('org_id', $orgId)
-            ->first();
+        try {
+            $branch = Branch::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $branch) {
+                return [
+                    'success' => false,
+                    'message' => 'Branch not found',
+                    'status' => 404,
+                ];
+            }
+
+            $branch->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Branch updated successfully',
+                'data' => $branch->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update branch: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): Branch
+    public function destroy(int $id, int $orgId): array
     {
-        return Branch::create($data);
-    }
+        try {
+            $branch = Branch::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
 
-    public function update(Branch $branch, array $data): Branch
-    {
-        $branch->update($data);
+            if (! $branch) {
+                return [
+                    'success' => false,
+                    'message' => 'Branch not found',
+                    'status' => 404,
+                ];
+            }
 
-        return $branch->fresh();
-    }
+            $branch->delete();
 
-    public function delete(Branch $branch): bool
-    {
-        return $branch->delete();
+            return [
+                'success' => true,
+                'message' => 'Branch deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete branch: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

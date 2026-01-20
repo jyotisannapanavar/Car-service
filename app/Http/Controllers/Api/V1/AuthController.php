@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Services\AuthService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class AuthController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected AuthService $authService
     ) {}
@@ -89,35 +86,17 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        try {
-            $user = $this->authService->attemptLogin(
-                $request->email,
-                $request->password
-            );
+        $result = $this->authService->login(
+            $request->email,
+            $request->password,
+            $request->device_name ?? 'api'
+        );
 
-            if (! $user) {
-                return $this->unauthorizedResponse('Invalid credentials or account is inactive');
-            }
-
-            $token = $this->authService->createToken(
-                $user,
-                $request->device_name ?? 'api'
-            );
-
-            return $this->successResponse([
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'org_id' => $user->org_id,
-                    'branch_id' => $user->branch_id,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ], 'Login successful');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Login failed: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -146,13 +125,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        try {
-            $this->authService->revokeCurrentToken($request->user());
+        $result = $this->authService->logout($request->user());
 
-            return $this->successResponse(null, 'Logged out successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Logout failed: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -191,21 +170,12 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $user->load(['organization', 'branch']);
+        $result = $this->authService->getProfile($request->user());
 
-            return $this->successResponse([
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'is_active' => $user->is_active,
-                'organization' => $user->organization,
-                'branch' => $user->branch,
-            ], 'User profile retrieved');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve profile: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }

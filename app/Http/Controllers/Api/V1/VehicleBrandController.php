@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\VehicleBrandRequest;
 use App\Services\VehicleBrandService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class VehicleBrandController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected VehicleBrandService $vehicleBrandService
     ) {}
@@ -36,15 +33,24 @@ class VehicleBrandController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $perPage = $request->input('per_page', 15);
-            $vehicleTypeId = $request->input('vehicle_type_id');
-            $vehicleBrands = $this->vehicleBrandService->getAll($vehicleTypeId, $perPage);
+        $result = $this->vehicleBrandService->index(
+            $request->input('vehicle_type_id'),
+            $request->input('per_page', 15)
+        );
 
-            return $this->paginatedResponse($vehicleBrands, 'Vehicle brands retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle brands: '.$e->getMessage());
+        $response = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
+
+        if (isset($result['data'])) {
+            $response['data'] = $result['data'];
         }
+        if (isset($result['pagination'])) {
+            $response['pagination'] = $result['pagination'];
+        }
+
+        return response()->json($response, $result['status']);
     }
 
     /**
@@ -64,13 +70,13 @@ class VehicleBrandController extends Controller
      */
     public function listByType(int $vehicleTypeId): JsonResponse
     {
-        try {
-            $vehicleBrands = $this->vehicleBrandService->getAllByType($vehicleTypeId);
+        $result = $this->vehicleBrandService->listByType($vehicleTypeId);
 
-            return $this->successResponse($vehicleBrands, 'Vehicle brands retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle brands: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -97,13 +103,13 @@ class VehicleBrandController extends Controller
      */
     public function store(VehicleBrandRequest $request): JsonResponse
     {
-        try {
-            $vehicleBrand = $this->vehicleBrandService->create($request->validated());
+        $result = $this->vehicleBrandService->store($request->validated());
 
-            return $this->createdResponse($vehicleBrand, 'Vehicle brand created successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create vehicle brand: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -124,19 +130,13 @@ class VehicleBrandController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        try {
-            $vehicleBrand = $this->vehicleBrandService->findById($id);
+        $result = $this->vehicleBrandService->show($id);
 
-            if (! $vehicleBrand) {
-                return $this->notFoundResponse('Vehicle brand not found');
-            }
-
-            $vehicleBrand->load(['vehicleType', 'vehicleModels']);
-
-            return $this->successResponse($vehicleBrand, 'Vehicle brand retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve vehicle brand: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -166,19 +166,13 @@ class VehicleBrandController extends Controller
      */
     public function update(VehicleBrandRequest $request, int $id): JsonResponse
     {
-        try {
-            $vehicleBrand = $this->vehicleBrandService->findById($id);
+        $result = $this->vehicleBrandService->update($id, $request->validated());
 
-            if (! $vehicleBrand) {
-                return $this->notFoundResponse('Vehicle brand not found');
-            }
-
-            $vehicleBrand = $this->vehicleBrandService->update($vehicleBrand, $request->validated());
-
-            return $this->successResponse($vehicleBrand, 'Vehicle brand updated successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update vehicle brand: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -199,18 +193,12 @@ class VehicleBrandController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        try {
-            $vehicleBrand = $this->vehicleBrandService->findById($id);
+        $result = $this->vehicleBrandService->destroy($id);
 
-            if (! $vehicleBrand) {
-                return $this->notFoundResponse('Vehicle brand not found');
-            }
-
-            $this->vehicleBrandService->delete($vehicleBrand);
-
-            return $this->successResponse(null, 'Vehicle brand deleted successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete vehicle brand: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }

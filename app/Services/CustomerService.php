@@ -3,62 +3,213 @@
 namespace App\Services;
 
 use App\Models\Customer;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Exception;
 
 class CustomerService
 {
-    public function getAll(int $orgId, ?int $branchId = null, ?string $search = null, int $perPage = 15): LengthAwarePaginator
+    public function index(int $orgId, ?int $branchId = null, ?string $search = null, int $perPage = 15): array
     {
-        $query = Customer::where('org_id', $orgId);
+        try {
+            $query = Customer::where('org_id', $orgId);
 
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
+            }
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
+            $customers = $query->orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Customers retrieved successfully',
+                'data' => $customers->items(),
+                'pagination' => [
+                    'current_page' => $customers->currentPage(),
+                    'total_pages' => $customers->lastPage(),
+                    'per_page' => $customers->perPage(),
+                    'total' => $customers->total(),
+                    'next_page_url' => $customers->nextPageUrl(),
+                    'prev_page_url' => $customers->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve customers: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
+    }
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
+    public function store(array $data, int $userOrgId): array
+    {
+        try {
+            if ($data['org_id'] != $userOrgId) {
+                return [
+                    'success' => false,
+                    'message' => 'You can only create customers for your organization',
+                    'status' => 403,
+                ];
+            }
+
+            $customer = Customer::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Customer created successfully',
+                'data' => $customer,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create customer: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
-
-        return $query->orderBy('name')->paginate($perPage);
     }
 
-    public function findById(int $id): ?Customer
+    public function show(int $id, int $orgId): array
     {
-        return Customer::find($id);
+        try {
+            $customer = Customer::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $customer->load(['organization', 'branch', 'vehicles.vehicleType', 'vehicles.vehicleBrand', 'vehicles.vehicleModel']);
+
+            return [
+                'success' => true,
+                'message' => 'Customer retrieved successfully',
+                'data' => $customer,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve customer: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findByIdAndOrganization(int $id, int $orgId): ?Customer
+    public function update(int $id, int $orgId, array $data): array
     {
-        return Customer::where('id', $id)
-            ->where('org_id', $orgId)
-            ->first();
+        try {
+            $customer = Customer::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $customer->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Customer updated successfully',
+                'data' => $customer->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update customer: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findByPhone(string $phone, int $orgId): ?Customer
+    public function destroy(int $id, int $orgId): array
     {
-        return Customer::where('phone', $phone)
-            ->where('org_id', $orgId)
-            ->first();
+        try {
+            $customer = Customer::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
+
+            $customer->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Customer deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete customer: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): Customer
+    public function searchByPhone(string $phone, int $orgId): array
     {
-        return Customer::create($data);
-    }
+        try {
+            if (empty($phone)) {
+                return [
+                    'success' => false,
+                    'message' => 'Phone number is required',
+                    'status' => 400,
+                ];
+            }
 
-    public function update(Customer $customer, array $data): Customer
-    {
-        $customer->update($data);
+            $customer = Customer::where('phone', $phone)
+                ->where('org_id', $orgId)
+                ->first();
 
-        return $customer->fresh();
-    }
+            if (! $customer) {
+                return [
+                    'success' => false,
+                    'message' => 'Customer not found',
+                    'status' => 404,
+                ];
+            }
 
-    public function delete(Customer $customer): bool
-    {
-        return $customer->delete();
+            $customer->load(['vehicles.vehicleType', 'vehicles.vehicleBrand', 'vehicles.vehicleModel']);
+
+            return [
+                'success' => true,
+                'message' => 'Customer found',
+                'data' => $customer,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to search customer: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

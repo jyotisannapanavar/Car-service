@@ -3,56 +3,188 @@
 namespace App\Services;
 
 use App\Models\Service;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Exception;
 
 class ServiceService
 {
-    public function getAll(int $orgId, ?int $branchId = null, int $perPage = 15): LengthAwarePaginator
+    public function index(int $orgId, ?int $branchId = null, int $perPage = 15): array
     {
-        $query = Service::where('org_id', $orgId);
+        try {
+            $query = Service::where('org_id', $orgId);
 
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
+            }
+
+            $services = $query->orderBy('name')->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Services retrieved successfully',
+                'data' => $services->items(),
+                'pagination' => [
+                    'current_page' => $services->currentPage(),
+                    'total_pages' => $services->lastPage(),
+                    'per_page' => $services->perPage(),
+                    'total' => $services->total(),
+                    'next_page_url' => $services->nextPageUrl(),
+                    'prev_page_url' => $services->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'status' => 500,
+            ];
         }
-
-        return $query->orderBy('name')->paginate($perPage);
     }
 
-    public function getAllByBranch(int $branchId): Collection
+    public function listByBranch(int $branchId): array
     {
-        return Service::where('branch_id', $branchId)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        try {
+            $services = Service::where('branch_id', $branchId)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            return [
+                'success' => true,
+                'message' => 'Services retrieved successfully',
+                'data' => $services,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findById(int $id): ?Service
+    public function store(array $data, int $userOrgId): array
     {
-        return Service::find($id);
+        try {
+            if ($data['org_id'] != $userOrgId) {
+                return [
+                    'success' => false,
+                    'message' => 'You can only create services for your organization',
+                    'status' => 403,
+                ];
+            }
+
+            $service = Service::create($data);
+
+            return [
+                'success' => true,
+                'message' => 'Service created successfully',
+                'data' => $service,
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create service: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function findByIdAndOrganization(int $id, int $orgId): ?Service
+    public function show(int $id, int $orgId): array
     {
-        return Service::where('id', $id)
-            ->where('org_id', $orgId)
-            ->first();
+        try {
+            $service = Service::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $service) {
+                return [
+                    'success' => false,
+                    'message' => 'Service not found',
+                    'status' => 404,
+                ];
+            }
+
+            $service->load(['organization', 'branch', 'vehicleServicePricing']);
+
+            return [
+                'success' => true,
+                'message' => 'Service retrieved successfully',
+                'data' => $service,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve service: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function create(array $data): Service
+    public function update(int $id, int $orgId, array $data): array
     {
-        return Service::create($data);
+        try {
+            $service = Service::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (! $service) {
+                return [
+                    'success' => false,
+                    'message' => 'Service not found',
+                    'status' => 404,
+                ];
+            }
+
+            $service->update($data);
+
+            return [
+                'success' => true,
+                'message' => 'Service updated successfully',
+                'data' => $service->fresh(),
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to update service: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 
-    public function update(Service $service, array $data): Service
+    public function destroy(int $id, int $orgId): array
     {
-        $service->update($data);
+        try {
+            $service = Service::where('id', $id)
+                ->where('org_id', $orgId)
+                ->first();
 
-        return $service->fresh();
-    }
+            if (! $service) {
+                return [
+                    'success' => false,
+                    'message' => 'Service not found',
+                    'status' => 404,
+                ];
+            }
 
-    public function delete(Service $service): bool
-    {
-        return $service->delete();
+            $service->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Service deleted successfully',
+                'data' => null,
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete service: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
     }
 }

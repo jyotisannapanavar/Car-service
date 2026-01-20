@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UserRequest;
 use App\Services\UserService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class UserController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected UserService $userService
     ) {}
@@ -37,17 +34,25 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $perPage = $request->input('per_page', 15);
-            $branchId = $request->input('branch_id');
+        $result = $this->userService->index(
+            $request->user()->org_id,
+            $request->input('branch_id'),
+            $request->input('per_page', 15)
+        );
 
-            $users = $this->userService->getAll($user->org_id, $branchId, $perPage);
+        $response = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
 
-            return $this->paginatedResponse($users, 'Users retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve users: '.$e->getMessage());
+        if (isset($result['data'])) {
+            $response['data'] = $result['data'];
         }
+        if (isset($result['pagination'])) {
+            $response['pagination'] = $result['pagination'];
+        }
+
+        return response()->json($response, $result['status']);
     }
 
     /**
@@ -80,20 +85,16 @@ class UserController extends Controller
      */
     public function store(UserRequest $request): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $currentUser = $request->user();
+        $result = $this->userService->store(
+            $request->validated(),
+            $request->user()->org_id
+        );
 
-            if ($data['org_id'] != $currentUser->org_id) {
-                return $this->forbiddenResponse('You can only create users for your organization');
-            }
-
-            $user = $this->userService->create($data);
-
-            return $this->createdResponse($user, 'User created successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create user: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -114,20 +115,13 @@ class UserController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        try {
-            $currentUser = $request->user();
-            $user = $this->userService->findByIdAndOrganization($id, $currentUser->org_id);
+        $result = $this->userService->show($id, $request->user()->org_id);
 
-            if (! $user) {
-                return $this->notFoundResponse('User not found');
-            }
-
-            $user->load(['organization', 'branch']);
-
-            return $this->successResponse($user, 'User retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve user: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -162,25 +156,17 @@ class UserController extends Controller
      */
     public function update(UserRequest $request, int $id): JsonResponse
     {
-        try {
-            $currentUser = $request->user();
-            $user = $this->userService->findByIdAndOrganization($id, $currentUser->org_id);
+        $result = $this->userService->update(
+            $id,
+            $request->user()->org_id,
+            $request->validated()
+        );
 
-            if (! $user) {
-                return $this->notFoundResponse('User not found');
-            }
-
-            $data = $request->validated();
-            if (empty($data['password'])) {
-                unset($data['password']);
-            }
-
-            $user = $this->userService->update($user, $data);
-
-            return $this->successResponse($user, 'User updated successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update user: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -202,24 +188,13 @@ class UserController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        try {
-            $currentUser = $request->user();
+        $currentUser = $request->user();
+        $result = $this->userService->destroy($id, $currentUser->org_id, $currentUser->id);
 
-            if ($currentUser->id === $id) {
-                return $this->errorResponse('You cannot delete your own account', 400);
-            }
-
-            $user = $this->userService->findByIdAndOrganization($id, $currentUser->org_id);
-
-            if (! $user) {
-                return $this->notFoundResponse('User not found');
-            }
-
-            $this->userService->delete($user);
-
-            return $this->successResponse(null, 'User deleted successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete user: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }

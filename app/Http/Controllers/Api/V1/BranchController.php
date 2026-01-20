@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\BranchRequest;
 use App\Services\BranchService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class BranchController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         protected BranchService $branchService
     ) {}
@@ -35,15 +32,24 @@ class BranchController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $perPage = $request->input('per_page', 15);
-            $branches = $this->branchService->getAll($user->org_id, $perPage);
+        $result = $this->branchService->index(
+            $request->user()->org_id,
+            $request->input('per_page', 15)
+        );
 
-            return $this->paginatedResponse($branches, 'Branches retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve branches: '.$e->getMessage());
+        $response = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
+
+        if (isset($result['data'])) {
+            $response['data'] = $result['data'];
         }
+        if (isset($result['pagination'])) {
+            $response['pagination'] = $result['pagination'];
+        }
+
+        return response()->json($response, $result['status']);
     }
 
     /**
@@ -79,20 +85,16 @@ class BranchController extends Controller
      */
     public function store(BranchRequest $request): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $user = $request->user();
+        $result = $this->branchService->store(
+            $request->validated(),
+            $request->user()->org_id
+        );
 
-            if ($data['org_id'] != $user->org_id) {
-                return $this->forbiddenResponse('You can only create branches for your organization');
-            }
-
-            $branch = $this->branchService->create($data);
-
-            return $this->createdResponse($branch, 'Branch created successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create branch: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -113,20 +115,13 @@ class BranchController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $branch = $this->branchService->findByIdAndOrganization($id, $user->org_id);
+        $result = $this->branchService->show($id, $request->user()->org_id);
 
-            if (! $branch) {
-                return $this->notFoundResponse('Branch not found');
-            }
-
-            $branch->load(['organization', 'users', 'services']);
-
-            return $this->successResponse($branch, 'Branch retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve branch: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -160,20 +155,17 @@ class BranchController extends Controller
      */
     public function update(BranchRequest $request, int $id): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $branch = $this->branchService->findByIdAndOrganization($id, $user->org_id);
+        $result = $this->branchService->update(
+            $id,
+            $request->user()->org_id,
+            $request->validated()
+        );
 
-            if (! $branch) {
-                return $this->notFoundResponse('Branch not found');
-            }
-
-            $branch = $this->branchService->update($branch, $request->validated());
-
-            return $this->successResponse($branch, 'Branch updated successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update branch: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 
     /**
@@ -194,19 +186,12 @@ class BranchController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        try {
-            $user = $request->user();
-            $branch = $this->branchService->findByIdAndOrganization($id, $user->org_id);
+        $result = $this->branchService->destroy($id, $request->user()->org_id);
 
-            if (! $branch) {
-                return $this->notFoundResponse('Branch not found');
-            }
-
-            $this->branchService->delete($branch);
-
-            return $this->successResponse(null, 'Branch deleted successfully');
-        } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete branch: '.$e->getMessage());
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
     }
 }
