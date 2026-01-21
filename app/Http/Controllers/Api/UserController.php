@@ -49,7 +49,7 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
+                // 'org_id' => ['required', 'exists:organizations,id'],
                 'branch_id' => ['nullable', 'exists:branches,id'],
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -63,6 +63,11 @@ class UserController extends Controller
                 'password' => ['required', 'string', 'min:8'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
+
+            $user = $request->user();
+
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
 
             $result = $this->userService->store(
                 $validated,
@@ -106,20 +111,24 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
+                // 'org_id' => ['Sometimes', 'required', 'exists:organizations,id'],
                 'branch_id' => ['nullable', 'exists:branches,id'],
-                'name' => ['required', 'string', 'max:255'],
+                'name' => ['sometimes', 'required', 'string', 'max:255'],
                 'email' => [
-                    'required',
+                    'sometimes','required',
                     'email',
                     'max:255',
                     Rule::unique('users', 'email')->ignore($id),
                 ],
                 'phone' => ['nullable', 'string', 'max:20'],
-                'role' => ['required', Rule::in(['admin', 'branch_manager', 'staff'])],
+                'role' => ['sometimes', 'required', Rule::in(['admin', 'branch_manager', 'staff'])],
                 'password' => ['nullable', 'string', 'min:8'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
+            $user = $request->user();
+
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
 
             $result = $this->userService->update(
                 $id,

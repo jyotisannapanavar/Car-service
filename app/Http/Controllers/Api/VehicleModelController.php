@@ -11,7 +11,8 @@ class VehicleModelController extends Controller
 {
     public function __construct(
         protected VehicleModelService $vehicleModelService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -71,8 +72,13 @@ class VehicleModelController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleModelService->store($validated);
+            $user = $request->user();
 
+            $result = $this->vehicleModelService->store(
+                $validated,
+                $user->org_id,
+                $user->branch_id
+            );
             return response()->json([
                 'success' => $result['success'],
                 'message' => $result['message'],

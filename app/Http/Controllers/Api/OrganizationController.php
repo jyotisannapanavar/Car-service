@@ -12,8 +12,7 @@ class OrganizationController extends Controller
 {
     public function __construct(
         protected OrganizationService $organizationService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -53,7 +52,12 @@ class OrganizationController extends Controller
                     'max:255',
                     Rule::unique('organizations', 'email'),
                 ],
-                'phone' => ['nullable', 'string', 'max:20'],
+                'phone' => [
+                    'nullable',
+                    'string',
+                    'max:20',
+                    Rule::unique('organizations', 'phone'), // ✅ DUPLICATE CHECK
+                ],
                 'address' => ['nullable', 'string'],
                 'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
@@ -98,7 +102,7 @@ class OrganizationController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255'],
+                'name' => ['sometimes', 'required', 'string', 'max:255'],
                 'email' => [
                     'nullable',
                     'email',

@@ -8,6 +8,60 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
+    public function register(array $data): array
+    {
+        try {
+            // Check if email already exists
+            $existingUser = User::where('email', $data['email'])->first();
+            if ($existingUser) {
+                return [
+                    'success' => false,
+                    'message' => 'Email already registered',
+                    'status' => 422,
+                ];
+            }
+
+            // Create new user
+            $user = User::create([
+                'org_id' => $data['org_id'] ?? null,
+                'branch_id' => $data['branch_id'] ?? null,
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+                'password' => Hash::make($data['password']),
+                'is_active' => $data['is_active'] ?? true,
+            ]);
+
+            // Create token for auto-login after registration
+            $token = $user->createToken('api')->plainTextToken;
+
+            return [
+                'success' => true,
+                'message' => 'Registration successful',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'org_id' => $user->org_id,
+                        'branch_id' => $user->branch_id,
+                        'is_active' => $user->is_active,
+                    ],
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                ],
+                'status' => 201,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Registration failed: '.$e->getMessage(),
+                'status' => 500,
+            ];
+        }
+    }
+
     public function login(string $email, string $password, string $deviceName = 'api'): array
     {
         try {

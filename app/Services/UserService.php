@@ -42,17 +42,9 @@ class UserService
         }
     }
 
-    public function store(array $data, int $userOrgId): array
+    public function store(array $data): array
     {
         try {
-            if ($data['org_id'] != $userOrgId) {
-                return [
-                    'success' => false,
-                    'message' => 'You can only create users for your organization',
-                    'status' => 403,
-                ];
-            }
-
             $data['password'] = Hash::make($data['password']);
             $user = User::create($data);
 

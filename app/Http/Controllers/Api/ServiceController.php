@@ -67,7 +67,6 @@ class ServiceController extends Controller
     {
         try {
             $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
                 'branch_id' => ['nullable', 'exists:branches,id'],
                 'name' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
@@ -76,10 +75,13 @@ class ServiceController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->serviceService->store(
-                $validated,
-                $request->user()->org_id
-            );
+            $user = $request->user();
+
+            // ✅ Always take from auth
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
+
+            $result = $this->serviceService->store($validated, $user->org_id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -94,6 +96,7 @@ class ServiceController extends Controller
             ], 500);
         }
     }
+
 
     public function show(Request $request, int $id): JsonResponse
     {
@@ -118,14 +121,19 @@ class ServiceController extends Controller
     {
         try {
             $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
+                // 'org_id' => ['sometimes', 'required', 'exists:organizations,id'],
                 'branch_id' => ['nullable', 'exists:branches,id'],
-                'name' => ['required', 'string', 'max:255'],
+                'name' => ['sometimes', 'required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
-                'base_price' => ['required', 'numeric', 'min:0'],
+                'base_price' => ['sometimes', 'required', 'numeric', 'min:0'],
                 'duration_minutes' => ['nullable', 'integer', 'min:1'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
+
+            $user = $request->user();
+
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
 
             $result = $this->serviceService->update(
                 $id,

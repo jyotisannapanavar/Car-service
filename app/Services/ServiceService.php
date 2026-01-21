@@ -35,7 +35,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'message' => 'Failed to retrieve services: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -58,23 +58,15 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'message' => 'Failed to retrieve services: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function store(array $data, int $userOrgId): array
+    public function store(array $data): array
     {
         try {
-            if ($data['org_id'] != $userOrgId) {
-                return [
-                    'success' => false,
-                    'message' => 'You can only create services for your organization',
-                    'status' => 403,
-                ];
-            }
-
             $service = Service::create($data);
 
             return [
@@ -86,11 +78,12 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create service: '.$e->getMessage(),
+                'message' => 'Failed to create service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
+
 
     public function show(int $id, int $orgId): array
     {
@@ -118,7 +111,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve service: '.$e->getMessage(),
+                'message' => 'Failed to retrieve service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -150,7 +143,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update service: '.$e->getMessage(),
+                'message' => 'Failed to update service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -182,7 +175,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete service: '.$e->getMessage(),
+                'message' => 'Failed to delete service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
