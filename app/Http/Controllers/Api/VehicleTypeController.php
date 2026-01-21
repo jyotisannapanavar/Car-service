@@ -11,7 +11,8 @@ class VehicleTypeController extends Controller
 {
     public function __construct(
         protected VehicleTypeService $vehicleTypeService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -68,6 +69,11 @@ class VehicleTypeController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
+            // Get org_id and branch_id from authenticated user
+            $user = $request->user();
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
+
             $result = $this->vehicleTypeService->store($validated);
 
             return response()->json([
@@ -107,7 +113,9 @@ class VehicleTypeController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255'],
+                'name' => ['sometimes', 'string', 'max:255'],
+                'org_id' => ['nullable', 'integer'],
+                'branch_id' => ['nullable', 'integer'],
                 'description' => ['nullable', 'string'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);

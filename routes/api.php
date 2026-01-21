@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -38,10 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('users/{user}', [UserController::class, 'update']);
     Route::delete('users/{user}', [UserController::class, 'destroy']);
 
-    Route::get('vehicle-types/list', [VehicleTypeController::class, 'list']);
+    Route::get('vehicle-types-list', [VehicleTypeController::class, 'list']);
     Route::get('vehicle-types', [VehicleTypeController::class, 'index']);
     Route::post('vehicle-types', [VehicleTypeController::class, 'store']);
-    Route::get('vehicle-types/{vehicleType}', [VehicleTypeController::class, 'show']);
+    Route::get('vehicle-types/{id}', [VehicleTypeController::class, 'show']);
     Route::put('vehicle-types/{vehicleType}', [VehicleTypeController::class, 'update']);
     Route::delete('vehicle-types/{vehicleType}', [VehicleTypeController::class, 'destroy']);
 
