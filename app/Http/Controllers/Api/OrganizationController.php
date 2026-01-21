@@ -1,26 +1,23 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\CustomerVehicleService;
+use App\Services\OrganizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
-class CustomerVehicleController extends Controller
+class OrganizationController extends Controller
 {
     public function __construct(
-        protected CustomerVehicleService $customerVehicleService
+        protected OrganizationService $organizationService
     ) {}
 
-    public function index(Request $request, int $customerId): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->customerVehicleService->index(
-                $customerId,
-                $request->user()->org_id,
-                $request->input('per_page', 15)
-            );
+            $result = $this->organizationService->index($request->input('per_page', 15));
 
             $response = [
                 'success' => $result['success'],
@@ -48,21 +45,20 @@ class CustomerVehicleController extends Controller
     {
         try {
             $validated = $request->validate([
-                'customer_id' => ['required', 'exists:customers,id'],
-                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
-                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
-                'vehicle_model_id' => ['required', 'exists:vehicle_models,id'],
-                'registration_number' => ['nullable', 'string', 'max:50'],
-                'color' => ['nullable', 'string', 'max:50'],
-                'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
-                'notes' => ['nullable', 'string'],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'nullable',
+                    'email',
+                    'max:255',
+                    Rule::unique('organizations', 'email'),
+                ],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->customerVehicleService->store(
-                $validated,
-                $request->user()->org_id
-            );
+            $result = $this->organizationService->store($validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -78,14 +74,10 @@ class CustomerVehicleController extends Controller
         }
     }
 
-    public function show(Request $request, int $customerId, int $id): JsonResponse
+    public function show(int $id): JsonResponse
     {
         try {
-            $result = $this->customerVehicleService->show(
-                $customerId,
-                $id,
-                $request->user()->org_id
-            );
+            $result = $this->organizationService->show($id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -101,27 +93,24 @@ class CustomerVehicleController extends Controller
         }
     }
 
-    public function update(Request $request, int $customerId, int $id): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
         try {
             $validated = $request->validate([
-                'customer_id' => ['required', 'exists:customers,id'],
-                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
-                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
-                'vehicle_model_id' => ['required', 'exists:vehicle_models,id'],
-                'registration_number' => ['nullable', 'string', 'max:50'],
-                'color' => ['nullable', 'string', 'max:50'],
-                'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
-                'notes' => ['nullable', 'string'],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'nullable',
+                    'email',
+                    'max:255',
+                    Rule::unique('organizations', 'email')->ignore($id),
+                ],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'address' => ['nullable', 'string'],
+                'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->customerVehicleService->update(
-                $customerId,
-                $id,
-                $request->user()->org_id,
-                $validated
-            );
+            $result = $this->organizationService->update($id, $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -137,14 +126,10 @@ class CustomerVehicleController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $customerId, int $id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         try {
-            $result = $this->customerVehicleService->destroy(
-                $customerId,
-                $id,
-                $request->user()->org_id
-            );
+            $result = $this->organizationService->destroy($id);
 
             return response()->json([
                 'success' => $result['success'],

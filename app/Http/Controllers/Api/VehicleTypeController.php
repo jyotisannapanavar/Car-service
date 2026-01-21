@@ -1,25 +1,22 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\VehicleModelService;
+use App\Services\VehicleTypeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class VehicleModelController extends Controller
+class VehicleTypeController extends Controller
 {
     public function __construct(
-        protected VehicleModelService $vehicleModelService
+        protected VehicleTypeService $vehicleTypeService
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->index(
-                $request->input('vehicle_brand_id'),
-                $request->input('per_page', 15)
-            );
+            $result = $this->vehicleTypeService->index($request->input('per_page', 15));
 
             $response = [
                 'success' => $result['success'],
@@ -43,10 +40,10 @@ class VehicleModelController extends Controller
         }
     }
 
-    public function listByBrand(int $vehicleBrandId): JsonResponse
+    public function list(): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->listByBrand($vehicleBrandId);
+            $result = $this->vehicleTypeService->list();
 
             return response()->json([
                 'success' => $result['success'],
@@ -66,12 +63,12 @@ class VehicleModelController extends Controller
     {
         try {
             $validated = $request->validate([
-                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
                 'name' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleModelService->store($validated);
+            $result = $this->vehicleTypeService->store($validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -90,7 +87,7 @@ class VehicleModelController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->show($id);
+            $result = $this->vehicleTypeService->show($id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -110,12 +107,12 @@ class VehicleModelController extends Controller
     {
         try {
             $validated = $request->validate([
-                'vehicle_brand_id' => ['required', 'exists:vehicle_brands,id'],
                 'name' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleModelService->update($id, $validated);
+            $result = $this->vehicleTypeService->update($id, $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -134,7 +131,7 @@ class VehicleModelController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->destroy($id);
+            $result = $this->vehicleTypeService->destroy($id);
 
             return response()->json([
                 'success' => $result['success'],

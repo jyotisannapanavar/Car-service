@@ -1,25 +1,23 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\UserService;
+use App\Services\VehicleBrandService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
-class UserController extends Controller
+class VehicleBrandController extends Controller
 {
     public function __construct(
-        protected UserService $userService
+        protected VehicleBrandService $vehicleBrandService
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->userService->index(
-                $request->user()->org_id,
-                $request->input('branch_id'),
+            $result = $this->vehicleBrandService->index(
+                $request->input('vehicle_type_id'),
                 $request->input('per_page', 15)
             );
 
@@ -45,29 +43,10 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request): JsonResponse
+    public function listByType(int $vehicleTypeId): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
-                'branch_id' => ['nullable', 'exists:branches,id'],
-                'name' => ['required', 'string', 'max:255'],
-                'email' => [
-                    'required',
-                    'email',
-                    'max:255',
-                    Rule::unique('users', 'email'),
-                ],
-                'phone' => ['nullable', 'string', 'max:20'],
-                'role' => ['required', Rule::in(['admin', 'branch_manager', 'staff'])],
-                'password' => ['required', 'string', 'min:8'],
-                'is_active' => ['sometimes', 'boolean'],
-            ]);
-
-            $result = $this->userService->store(
-                $validated,
-                $request->user()->org_id
-            );
+            $result = $this->vehicleBrandService->listByType($vehicleTypeId);
 
             return response()->json([
                 'success' => $result['success'],
@@ -83,10 +62,36 @@ class UserController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
-            $result = $this->userService->show($id, $request->user()->org_id);
+            $validated = $request->validate([
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
+                'name' => ['required', 'string', 'max:255'],
+                'logo' => ['nullable', 'string', 'max:255'],
+                'is_active' => ['sometimes', 'boolean'],
+            ]);
+
+            $result = $this->vehicleBrandService->store($validated);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        try {
+            $result = $this->vehicleBrandService->show($id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -106,26 +111,13 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
-                'branch_id' => ['nullable', 'exists:branches,id'],
+                'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
                 'name' => ['required', 'string', 'max:255'],
-                'email' => [
-                    'required',
-                    'email',
-                    'max:255',
-                    Rule::unique('users', 'email')->ignore($id),
-                ],
-                'phone' => ['nullable', 'string', 'max:20'],
-                'role' => ['required', Rule::in(['admin', 'branch_manager', 'staff'])],
-                'password' => ['nullable', 'string', 'min:8'],
+                'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->userService->update(
-                $id,
-                $request->user()->org_id,
-                $validated
-            );
+            $result = $this->vehicleBrandService->update($id, $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -141,11 +133,10 @@ class UserController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         try {
-            $currentUser = $request->user();
-            $result = $this->userService->destroy($id, $currentUser->org_id, $currentUser->id);
+            $result = $this->vehicleBrandService->destroy($id);
 
             return response()->json([
                 'success' => $result['success'],

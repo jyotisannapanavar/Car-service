@@ -1,23 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\OrganizationService;
+use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class OrganizationController extends Controller
+class CustomerController extends Controller
 {
     public function __construct(
-        protected OrganizationService $organizationService
+        protected CustomerService $customerService
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->organizationService->index($request->input('per_page', 15));
+            $result = $this->customerService->index(
+                $request->user()->org_id,
+                $request->input('branch_id'),
+                $request->input('search'),
+                $request->input('per_page', 15)
+            );
 
             $response = [
                 'success' => $result['success'],
@@ -44,21 +49,29 @@ class OrganizationController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            $orgId = $request->input('org_id');
+
             $validated = $request->validate([
+                'org_id' => ['required', 'exists:organizations,id'],
+                'branch_id' => ['nullable', 'exists:branches,id'],
                 'name' => ['required', 'string', 'max:255'],
-                'email' => [
+                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => [
                     'required',
-                    'email',
-                    'max:255',
-                    Rule::unique('organizations', 'email'),
+                    'string',
+                    'max:20',
+                    Rule::unique('customers', 'phone')->where('org_id', $orgId),
                 ],
-                'phone' => ['nullable', 'string', 'max:20'],
                 'address' => ['nullable', 'string'],
-                'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'phone.unique' => 'A customer with this phone number already exists in your organization.',
             ]);
 
-            $result = $this->organizationService->store($validated);
+            $result = $this->customerService->store(
+                $validated,
+                $request->user()->org_id
+            );
 
             return response()->json([
                 'success' => $result['success'],
@@ -74,10 +87,10 @@ class OrganizationController extends Controller
         }
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->organizationService->show($id);
+            $result = $this->customerService->show($id, $request->user()->org_id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -96,21 +109,32 @@ class OrganizationController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         try {
+            $orgId = $request->input('org_id');
+
             $validated = $request->validate([
+                'org_id' => ['required', 'exists:organizations,id'],
+                'branch_id' => ['nullable', 'exists:branches,id'],
                 'name' => ['required', 'string', 'max:255'],
-                'email' => [
+                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => [
                     'required',
-                    'email',
-                    'max:255',
-                    Rule::unique('organizations', 'email')->ignore($id),
+                    'string',
+                    'max:20',
+                    Rule::unique('customers', 'phone')
+                        ->where('org_id', $orgId)
+                        ->ignore($id),
                 ],
-                'phone' => ['nullable', 'string', 'max:20'],
                 'address' => ['nullable', 'string'],
-                'logo' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'phone.unique' => 'A customer with this phone number already exists in your organization.',
             ]);
 
-            $result = $this->organizationService->update($id, $validated);
+            $result = $this->customerService->update(
+                $id,
+                $request->user()->org_id,
+                $validated
+            );
 
             return response()->json([
                 'success' => $result['success'],
@@ -126,10 +150,32 @@ class OrganizationController extends Controller
         }
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->organizationService->destroy($id);
+            $result = $this->customerService->destroy($id, $request->user()->org_id);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'data' => $result['data'] ?? null,
+            ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function searchByPhone(Request $request): JsonResponse
+    {
+        try {
+            $result = $this->customerService->searchByPhone(
+                $request->input('phone', ''),
+                $request->user()->org_id
+            );
 
             return response()->json([
                 'success' => $result['success'],
