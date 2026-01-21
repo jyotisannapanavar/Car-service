@@ -12,7 +12,8 @@ class OrganizationController extends Controller
 {
     public function __construct(
         protected OrganizationService $organizationService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
