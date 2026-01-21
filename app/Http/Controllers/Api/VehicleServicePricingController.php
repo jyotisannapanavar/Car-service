@@ -11,7 +11,8 @@ class VehicleServicePricingController extends Controller
 {
     public function __construct(
         protected VehicleServicePricingService $pricingService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -50,7 +51,6 @@ class VehicleServicePricingController extends Controller
     {
         try {
             $validated = $request->validate([
-                'branch_id' => ['required', 'exists:branches,id'],
                 'service_id' => ['required', 'exists:services,id'],
                 'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
                 'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
@@ -71,9 +71,12 @@ class VehicleServicePricingController extends Controller
                 'price.min' => 'Price cannot be negative.',
             ]);
 
+            $user = $request->user();
+
             $result = $this->pricingService->store(
                 $validated,
-                $request->user()->org_id
+                $user->org_id,
+                $user->branch_id
             );
 
             return response()->json([

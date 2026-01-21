@@ -11,7 +11,7 @@ class VehicleServicePricingService
     public function index(int $orgId, ?int $branchId = null, ?int $serviceId = null, int $perPage = 15): array
     {
         try {
-            if (! $branchId) {
+            if (!$branchId) {
                 return [
                     'success' => false,
                     'message' => 'Branch ID is required',
@@ -23,7 +23,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch does not belong to your organization',
@@ -58,20 +58,20 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve pricing: '.$e->getMessage(),
+                'message' => 'Failed to retrieve pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function store(array $data, int $orgId): array
+    public function store(array $data, int $orgId, int $branchId): array
     {
         try {
-            $branch = Branch::where('id', $data['branch_id'])
+            $branch = Branch::where('id', $branchId)
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch does not belong to your organization',
@@ -79,8 +79,12 @@ class VehicleServicePricingService
                 ];
             }
 
+            // 🔥 Force org_id & branch_id
+            $data['branch_id'] = $branchId;
+            $data['org_id'] = $orgId;
+
             $isDuplicate = $this->checkDuplicatePricing(
-                $data['branch_id'],
+                $branchId,
                 $data['service_id'],
                 $data['vehicle_type_id'],
                 $data['vehicle_brand_id'] ?? null,
@@ -104,21 +108,23 @@ class VehicleServicePricingService
                 'data' => $pricing,
                 'status' => 201,
             ];
-        } catch (Exception $e) {
+
+        } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create pricing: '.$e->getMessage(),
+                'message' => 'Failed to create pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
+
 
     public function show(int $id, int $orgId): array
     {
         try {
             $pricing = VehicleServicePricing::find($id);
 
-            if (! $pricing) {
+            if (!$pricing) {
                 return [
                     'success' => false,
                     'message' => 'Pricing not found',
@@ -130,7 +136,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Pricing does not belong to your organization',
@@ -149,7 +155,7 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve pricing: '.$e->getMessage(),
+                'message' => 'Failed to retrieve pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -160,7 +166,7 @@ class VehicleServicePricingService
         try {
             $pricing = VehicleServicePricing::find($id);
 
-            if (! $pricing) {
+            if (!$pricing) {
                 return [
                     'success' => false,
                     'message' => 'Pricing not found',
@@ -172,7 +178,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Pricing does not belong to your organization',
@@ -209,7 +215,7 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update pricing: '.$e->getMessage(),
+                'message' => 'Failed to update pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -220,7 +226,7 @@ class VehicleServicePricingService
         try {
             $pricing = VehicleServicePricing::find($id);
 
-            if (! $pricing) {
+            if (!$pricing) {
                 return [
                     'success' => false,
                     'message' => 'Pricing not found',
@@ -232,7 +238,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Pricing does not belong to your organization',
@@ -251,7 +257,7 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete pricing: '.$e->getMessage(),
+                'message' => 'Failed to delete pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -264,7 +270,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch does not belong to your organization',
@@ -280,7 +286,7 @@ class VehicleServicePricingService
                 $data['vehicle_model_id'] ?? null
             );
 
-            if (! $pricing) {
+            if (!$pricing) {
                 return [
                     'success' => false,
                     'message' => 'No pricing found for the specified parameters',
@@ -303,7 +309,7 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to lookup price: '.$e->getMessage(),
+                'message' => 'Failed to lookup price: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -312,7 +318,7 @@ class VehicleServicePricingService
     public function getByService(int $serviceId, int $orgId, ?int $branchId = null): array
     {
         try {
-            if (! $branchId) {
+            if (!$branchId) {
                 return [
                     'success' => false,
                     'message' => 'Branch ID is required',
@@ -324,7 +330,7 @@ class VehicleServicePricingService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch does not belong to your organization',
@@ -347,7 +353,7 @@ class VehicleServicePricingService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve pricing: '.$e->getMessage(),
+                'message' => 'Failed to retrieve pricing: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

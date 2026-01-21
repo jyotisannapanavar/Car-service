@@ -35,7 +35,7 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle models: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -58,15 +58,33 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle models: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function store(array $data): array
+    public function store(array $data, int $orgId, int $branchId): array
     {
         try {
+            // Force org & branch from auth
+            $data['org_id'] = $orgId;
+            $data['branch_id'] = $branchId;
+
+            // (Optional but recommended)
+            // Ensure brand belongs to same org
+            $brand = \App\Models\VehicleBrand::where('id', $data['vehicle_brand_id'])
+                ->where('org_id', $orgId)
+                ->first();
+
+            if (!$brand) {
+                return [
+                    'success' => false,
+                    'message' => 'Vehicle brand does not belong to your organization',
+                    'status' => 403,
+                ];
+            }
+
             $vehicleModel = VehicleModel::create($data);
 
             return [
@@ -75,21 +93,23 @@ class VehicleModelService
                 'data' => $vehicleModel,
                 'status' => 201,
             ];
-        } catch (Exception $e) {
+
+        } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle model: '.$e->getMessage(),
+                'message' => 'Failed to create vehicle model: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
     }
+
 
     public function show(int $id): array
     {
         try {
             $vehicleModel = VehicleModel::find($id);
 
-            if (! $vehicleModel) {
+            if (!$vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -108,7 +128,7 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle model: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle model: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -119,7 +139,7 @@ class VehicleModelService
         try {
             $vehicleModel = VehicleModel::find($id);
 
-            if (! $vehicleModel) {
+            if (!$vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -138,7 +158,7 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle model: '.$e->getMessage(),
+                'message' => 'Failed to update vehicle model: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -149,7 +169,7 @@ class VehicleModelService
         try {
             $vehicleModel = VehicleModel::find($id);
 
-            if (! $vehicleModel) {
+            if (!$vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -168,7 +188,7 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle model: '.$e->getMessage(),
+                'message' => 'Failed to delete vehicle model: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

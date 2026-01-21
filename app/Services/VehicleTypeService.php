@@ -29,7 +29,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle types: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -49,7 +49,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle types: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -69,7 +69,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle type: '.$e->getMessage(),
+                'message' => 'Failed to create vehicle type: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -80,7 +80,7 @@ class VehicleTypeService
         try {
             $vehicleType = VehicleType::find($id);
 
-            if (! $vehicleType) {
+            if (!$vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -99,7 +99,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle type: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle type: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -110,7 +110,7 @@ class VehicleTypeService
         try {
             $vehicleType = VehicleType::find($id);
 
-            if (! $vehicleType) {
+            if (!$vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -129,7 +129,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle type: '.$e->getMessage(),
+                'message' => 'Failed to update vehicle type: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -140,7 +140,7 @@ class VehicleTypeService
         try {
             $vehicleType = VehicleType::find($id);
 
-            if (! $vehicleType) {
+            if (!$vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -159,7 +159,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle type: '.$e->getMessage(),
+                'message' => 'Failed to delete vehicle type: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
