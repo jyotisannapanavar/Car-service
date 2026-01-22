@@ -59,10 +59,10 @@ class CustomerVehicleController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->customerVehicleService->store(
-                $validated,
-                $request->user()->org_id
-            );
+            $user = $request->user();
+            $validated['org_id'] = $user->org_id;
+            $validated['branch_id'] = $user->branch_id;
+            $result = $this->customerVehicleService->store($validated, $user->org_id);
 
             return response()->json([
                 'success' => $result['success'],
@@ -151,6 +151,36 @@ class CustomerVehicleController extends Controller
                 'message' => $result['message'],
                 'data' => $result['data'] ?? null,
             ], $result['status']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null,
+            ], 500);
+        }
+    }
+
+    public function list(Request $request): JsonResponse
+    {
+        try {
+            $result = $this->customerVehicleService->list(
+                $request->input('per_page', 15),
+                $request->input('query')
+            );
+
+            $response = [
+                'success' => $result['success'],
+                'message' => $result['message'],
+            ];
+
+            if (isset($result['data'])) {
+                $response['data'] = $result['data'];
+            }
+            if (isset($result['pagination'])) {
+                $response['pagination'] = $result['pagination'];
+            }
+
+            return response()->json($response, $result['status']);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

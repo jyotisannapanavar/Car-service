@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('customers/{customer}/vehicles', [CustomerVehicleController::class, 'index']);
     Route::post('customer-vehicles', [CustomerVehicleController::class, 'store']);
+    Route::get('customer-vehicles/list', [CustomerVehicleController::class, 'list']);
     Route::get('customers/{customer}/vehicles/{vehicle}', [CustomerVehicleController::class, 'show']);
     Route::put('customers/{customer}/vehicles/{vehicle}', [CustomerVehicleController::class, 'update']);
     Route::delete('customers/{customer}/vehicles/{vehicle}', [CustomerVehicleController::class, 'destroy']);
@@ -87,6 +88,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('pricing/{pricing}', [VehicleServicePricingController::class, 'show']);
     Route::put('pricing/{pricing}', [VehicleServicePricingController::class, 'update']);
     Route::delete('pricing/{pricing}', [VehicleServicePricingController::class, 'destroy']);
-
 });
-

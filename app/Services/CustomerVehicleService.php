@@ -24,6 +24,7 @@ class CustomerVehicleService
             }
 
             $vehicles = CustomerVehicle::where('customer_id', $customerId)
+                ->with(['vehicleType', 'vehicleBrand', 'vehicleModel', 'customer'])
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
 
@@ -44,7 +45,7 @@ class CustomerVehicleService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve customer vehicles: '.$e->getMessage(),
+                'message' => 'Failed to retrieve customer vehicles: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -77,7 +78,7 @@ class CustomerVehicleService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create customer vehicle: '.$e->getMessage(),
+                'message' => 'Failed to create customer vehicle: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -121,7 +122,7 @@ class CustomerVehicleService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve customer vehicle: '.$e->getMessage(),
+                'message' => 'Failed to retrieve customer vehicle: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -166,7 +167,7 @@ class CustomerVehicleService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update customer vehicle: '.$e->getMessage(),
+                'message' => 'Failed to update customer vehicle: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -210,7 +211,48 @@ class CustomerVehicleService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete customer vehicle: '.$e->getMessage(),
+                'message' => 'Failed to delete customer vehicle: ' . $e->getMessage(),
+                'status' => 500,
+            ];
+        }
+    }
+
+    public function list(int $perPage = 15, ?string $search = null): array
+    {
+        try {
+            $query = CustomerVehicle::with(['vehicleType', 'vehicleBrand', 'vehicleModel', 'customer'])
+                ->orderBy('created_at', 'desc');
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('registration_number', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($customerQ) use ($search) {
+                            $customerQ->where('name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            $vehicles = $query->paginate($perPage);
+
+            return [
+                'success' => true,
+                'message' => 'Customer vehicles retrieved successfully',
+                'data' => $vehicles->items(),
+                'pagination' => [
+                    'current_page' => $vehicles->currentPage(),
+                    'total_pages' => $vehicles->lastPage(),
+                    'per_page' => $vehicles->perPage(),
+                    'total' => $vehicles->total(),
+                    'next_page_url' => $vehicles->nextPageUrl(),
+                    'prev_page_url' => $vehicles->previousPageUrl(),
+                ],
+                'status' => 200,
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to retrieve customer vehicles: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

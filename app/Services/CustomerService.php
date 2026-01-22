@@ -52,45 +52,41 @@ class CustomerService
         }
     }
 
-  public function store(array $data, int $userOrgId): array
+ public function store(array $data, User $authUser): array
 {
     DB::beginTransaction();
 
     try {
-        if ($data['org_id'] != $userOrgId) {
-            return [
-                'success' => false,
-                'message' => 'You can only create customers for your organization',
-                'status' => 403,
-            ];
-        }
+        // 🔐 FORCE org_id & branch_id FROM TOKEN
+        $data['org_id'] = $authUser->org_id;
+        $data['branch_id'] = $authUser->branch_id;
 
         /**
-         * 1️⃣ Generate default password
+         * Generate default password
          */
         $defaultPassword = Str::random(10);
 
         /**
-         * 2️⃣ Create user
+         * Create user
          */
         $user = User::create([
             'name'      => $data['name'],
             'email'     => $data['email'] ?? null,
             'phone'     => $data['phone'],
-            'org_id'    => $data['org_id'],
-            'branch_id' => $data['branch_id'],
-            'password' => Hash::make('password'),
+            'org_id'    => $authUser->org_id,
+            'branch_id' => $authUser->branch_id,
+            'password'  => Hash::make('password'),
             'role'      => 'customer',
             'is_active' => $data['is_active'] ?? true,
         ]);
 
         /**
-         * 3️⃣ Attach user_id to customer
+         * Attach user_id to customer
          */
         $data['user_id'] = $user->id;
 
         /**
-         * 4️⃣ Create customer
+         * Create customer
          */
         $customer = Customer::create($data);
 
@@ -101,7 +97,7 @@ class CustomerService
             'message' => 'Customer created successfully',
             'data' => [
                 'customer' => $customer,
-                'default_password' => $defaultPassword, // show only once
+                'default_password' => $defaultPassword,
             ],
             'status' => 201,
         ];
@@ -115,6 +111,7 @@ class CustomerService
         ];
     }
 }
+
 
 
     public function show(int $id): array

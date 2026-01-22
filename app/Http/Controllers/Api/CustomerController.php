@@ -46,46 +46,44 @@ class CustomerController extends Controller
         }
     }
 
-    public function store(Request $request): JsonResponse
-    {
-        try {
-            $orgId = $request->input('org_id');
+  public function store(Request $request): JsonResponse
+{
+    try {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('customers', 'phone')
+                    ->where('org_id', $request->user()->org_id),
+            ],
+            'address' => ['nullable', 'string'],
+            'is_active' => ['sometimes', 'boolean'],
+        ], [
+            'phone.unique' => 'A customer with this phone number already exists in your organization.',
+        ]);
 
-            $validated = $request->validate([
-                'org_id' => ['required', 'exists:organizations,id'],
-                'branch_id' => ['nullable', 'exists:branches,id'],
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['nullable', 'email', 'max:255'],
-                'phone' => [
-                    'required',
-                    'string',
-                    'max:20',
-                    Rule::unique('customers', 'phone')->where('org_id', $orgId),
-                ],
-                'address' => ['nullable', 'string'],
-                'is_active' => ['sometimes', 'boolean'],
-            ], [
-                'phone.unique' => 'A customer with this phone number already exists in your organization.',
-            ]);
+        $result = $this->customerService->store(
+            $validated,
+            $request->user()
+        );
 
-            $result = $this->customerService->store(
-                $validated,
-                $request->user()->org_id
-            );
-
-            return response()->json([
-                'success' => $result['success'],
-                'message' => $result['message'],
-                'data' => $result['data'] ?? null,
-            ], $result['status']);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
-        }
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+        ], $result['status']);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'data' => null,
+        ], 500);
     }
+}
+
 
     public function show(Request $request, int $id): JsonResponse
     {
