@@ -68,11 +68,11 @@ class VehicleBrandController extends Controller
             $validated = $request->validate([
                 'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
                 'name' => ['required', 'string', 'max:255'],
-                'logo' => ['nullable', 'string', 'max:255'],
+                'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleBrandService->store($validated);
+        $result = $this->vehicleBrandService->store($validated, $request);
 
             return response()->json([
                 'success' => $result['success'],

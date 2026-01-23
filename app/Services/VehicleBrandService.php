@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\VehicleBrand;
 use Exception;
+use Illuminate\Http\Request;
 
 class VehicleBrandService
 {
@@ -64,8 +65,13 @@ class VehicleBrandService
         }
     }
 
-    public function store(array $data): array
+    public function store(array $data, Request $request): array
     {
+
+        if ($request->hasFile('logo')) {
+            $data['logo'] = $request->file('logo')
+                ->store('vehicle-brands', 'public');
+        }
         try {
             $vehicleBrand = VehicleBrand::create($data);
 
