@@ -54,7 +54,7 @@ class CustomerVehicleController extends Controller
                 'vehicle_model_id' => ['required', 'exists:vehicle_models,id'],
                 'registration_number' => ['nullable', 'string', 'max:50'],
                 'color' => ['nullable', 'string', 'max:50'],
-                'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+                'year' => ['nullable', 'integer', 'min:1900', 'max:' . now()->year],
                 'notes' => ['nullable', 'string'],
                 'is_active' => ['sometimes', 'boolean'],
             ]);

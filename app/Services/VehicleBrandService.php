@@ -47,7 +47,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brands: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -71,7 +71,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brands: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -79,6 +79,9 @@ class VehicleBrandService
 
     public function store(array $data, Request $request): array
     {
+        $user = $request->user();
+        $data['org_id'] = $user->org_id;
+        $data['branch_id'] = $user->branch_id;
 
         if ($request->hasFile('logo')) {
             $data['logo'] = $request->file('logo')
@@ -96,7 +99,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle brand: '.$e->getMessage(),
+                'message' => 'Failed to create vehicle brand: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -126,7 +129,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brand: '.$e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brand: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -163,7 +166,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle brand: '.$e->getMessage(),
+                'message' => 'Failed to update vehicle brand: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -193,7 +196,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle brand: '.$e->getMessage(),
+                'message' => 'Failed to delete vehicle brand: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
