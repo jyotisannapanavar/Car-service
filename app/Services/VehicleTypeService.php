@@ -2,15 +2,20 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\VehicleType;
+use App\Traits\TenantScope;
 use Exception;
 
 class VehicleTypeService
 {
-    public function index(int $perPage = 15): array
+    use TenantScope;
+
+    public function index(User $user, int $perPage = 15): array
     {
         try {
-            $vehicleTypes = VehicleType::orderBy('name')->paginate($perPage);
+            $query = $this->applyTenantScope(VehicleType::query(), $user);
+            $vehicleTypes = $query->orderBy('name')->paginate($perPage);
 
             return [
                 'success' => true,
@@ -29,16 +34,17 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle types: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function list(): array
+    public function list(User $user): array
     {
         try {
-            $vehicleTypes = VehicleType::where('is_active', true)->orderBy('name')->get();
+            $query = $this->applyTenantScope(VehicleType::where('is_active', true), $user);
+            $vehicleTypes = $query->orderBy('name')->get();
 
             return [
                 'success' => true,
@@ -49,7 +55,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle types: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle types: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -69,18 +75,18 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle type: ' . $e->getMessage(),
+                'message' => 'Failed to create vehicle type: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function show(int $id): array
+    public function show(int $id, User $user): array
     {
         try {
-            $vehicleType = VehicleType::find($id);
+            $vehicleType = $this->applyTenantScope(VehicleType::where('id', $id), $user)->first();
 
-            if (!$vehicleType) {
+            if (! $vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -99,18 +105,18 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle type: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle type: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function update(int $id, array $data): array
+    public function update(int $id, User $user, array $data): array
     {
         try {
-            $vehicleType = VehicleType::find($id);
+            $vehicleType = $this->applyTenantScope(VehicleType::where('id', $id), $user)->first();
 
-            if (!$vehicleType) {
+            if (! $vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -129,18 +135,18 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle type: ' . $e->getMessage(),
+                'message' => 'Failed to update vehicle type: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function destroy(int $id): array
+    public function destroy(int $id, User $user): array
     {
         try {
-            $vehicleType = VehicleType::find($id);
+            $vehicleType = $this->applyTenantScope(VehicleType::where('id', $id), $user)->first();
 
-            if (!$vehicleType) {
+            if (! $vehicleType) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle type not found',
@@ -159,7 +165,7 @@ class VehicleTypeService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle type: ' . $e->getMessage(),
+                'message' => 'Failed to delete vehicle type: '.$e->getMessage(),
                 'status' => 500,
             ];
         }

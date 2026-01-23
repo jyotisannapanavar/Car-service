@@ -11,13 +11,12 @@ class VehicleTypeController extends Controller
 {
     public function __construct(
         protected VehicleTypeService $vehicleTypeService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->vehicleTypeService->index($request->input('per_page', 15));
+            $result = $this->vehicleTypeService->index($request->user(), $request->input('per_page', 15));
 
             $response = [
                 'success' => $result['success'],
@@ -41,10 +40,10 @@ class VehicleTypeController extends Controller
         }
     }
 
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         try {
-            $result = $this->vehicleTypeService->list();
+            $result = $this->vehicleTypeService->list($request->user());
 
             return response()->json([
                 'success' => $result['success'],
@@ -90,10 +89,10 @@ class VehicleTypeController extends Controller
         }
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleTypeService->show($id);
+            $result = $this->vehicleTypeService->show($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],
@@ -120,7 +119,7 @@ class VehicleTypeController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleTypeService->update($id, $validated);
+            $result = $this->vehicleTypeService->update($id, $request->user(), $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -136,10 +135,10 @@ class VehicleTypeController extends Controller
         }
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleTypeService->destroy($id);
+            $result = $this->vehicleTypeService->destroy($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],

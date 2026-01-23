@@ -2,15 +2,20 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use App\Models\VehicleBrand;
 use App\Models\VehicleModel;
+use App\Traits\TenantScope;
 use Exception;
 
 class VehicleModelService
 {
-    public function index(?int $vehicleBrandId = null, int $perPage = 15): array
+    use TenantScope;
+
+    public function index(User $user, ?int $vehicleBrandId = null, int $perPage = 15): array
     {
         try {
-            $query = VehicleModel::query();
+            $query = $this->applyTenantScope(VehicleModel::query(), $user);
 
             if ($vehicleBrandId) {
                 $query->where('vehicle_brand_id', $vehicleBrandId);
@@ -35,19 +40,20 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle models: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function listByBrand(int $vehicleBrandId): array
+    public function listByBrand(User $user, int $vehicleBrandId): array
     {
         try {
-            $vehicleModels = VehicleModel::where('vehicle_brand_id', $vehicleBrandId)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
+            $query = $this->applyTenantScope(
+                VehicleModel::where('vehicle_brand_id', $vehicleBrandId)->where('is_active', true),
+                $user
+            );
+            $vehicleModels = $query->orderBy('name')->get();
 
             return [
                 'success' => true,
@@ -58,26 +64,24 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle models: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle models: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function store(array $data, int $orgId, int $branchId): array
+    public function store(array $data, User $user): array
     {
         try {
-            // Force org & branch from auth
-            $data['org_id'] = $orgId;
-            $data['branch_id'] = $branchId;
+            $data['org_id'] = $user->org_id;
+            $data['branch_id'] = $user->branch_id;
 
-            // (Optional but recommended)
-            // Ensure brand belongs to same org
-            $brand = \App\Models\VehicleBrand::where('id', $data['vehicle_brand_id'])
-                ->where('org_id', $orgId)
-                ->first();
+            $brand = $this->applyTenantScope(
+                VehicleBrand::where('id', $data['vehicle_brand_id']),
+                $user
+            )->first();
 
-            if (!$brand) {
+            if (! $brand) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle brand does not belong to your organization',
@@ -93,23 +97,21 @@ class VehicleModelService
                 'data' => $vehicleModel,
                 'status' => 201,
             ];
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle model: ' . $e->getMessage(),
+                'message' => 'Failed to create vehicle model: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-
-    public function show(int $id): array
+    public function show(int $id, User $user): array
     {
         try {
-            $vehicleModel = VehicleModel::find($id);
+            $vehicleModel = $this->applyTenantScope(VehicleModel::where('id', $id), $user)->first();
 
-            if (!$vehicleModel) {
+            if (! $vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -128,18 +130,18 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle model: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle model: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function update(int $id, array $data): array
+    public function update(int $id, User $user, array $data): array
     {
         try {
-            $vehicleModel = VehicleModel::find($id);
+            $vehicleModel = $this->applyTenantScope(VehicleModel::where('id', $id), $user)->first();
 
-            if (!$vehicleModel) {
+            if (! $vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -158,18 +160,18 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle model: ' . $e->getMessage(),
+                'message' => 'Failed to update vehicle model: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function destroy(int $id): array
+    public function destroy(int $id, User $user): array
     {
         try {
-            $vehicleModel = VehicleModel::find($id);
+            $vehicleModel = $this->applyTenantScope(VehicleModel::where('id', $id), $user)->first();
 
-            if (!$vehicleModel) {
+            if (! $vehicleModel) {
                 return [
                     'success' => false,
                     'message' => 'Vehicle model not found',
@@ -188,7 +190,7 @@ class VehicleModelService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle model: ' . $e->getMessage(),
+                'message' => 'Failed to delete vehicle model: '.$e->getMessage(),
                 'status' => 500,
             ];
         }

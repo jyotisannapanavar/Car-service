@@ -2,17 +2,21 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\VehicleBrand;
+use App\Traits\TenantScope;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class VehicleBrandService
 {
-    public function index(?int $vehicleTypeId = null, int $perPage = 15): array
+    use TenantScope;
+
+    public function index(User $user, ?int $vehicleTypeId = null, int $perPage = 15): array
     {
         try {
-            $query = VehicleBrand::query();
+            $query = $this->applyTenantScope(VehicleBrand::query(), $user);
 
             if ($vehicleTypeId) {
                 $query->where('vehicle_type_id', $vehicleTypeId);
@@ -37,19 +41,20 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brands: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function listByType(int $vehicleTypeId): array
+    public function listByType(User $user, int $vehicleTypeId): array
     {
         try {
-            $vehicleBrands = VehicleBrand::where('vehicle_type_id', $vehicleTypeId)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
+            $query = $this->applyTenantScope(
+                VehicleBrand::where('vehicle_type_id', $vehicleTypeId)->where('is_active', true),
+                $user
+            );
+            $vehicleBrands = $query->orderBy('name')->get();
 
             return [
                 'success' => true,
@@ -60,7 +65,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brands: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brands: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -85,16 +90,16 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create vehicle brand: ' . $e->getMessage(),
+                'message' => 'Failed to create vehicle brand: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function show(int $id): array
+    public function show(int $id, User $user): array
     {
         try {
-            $vehicleBrand = VehicleBrand::find($id);
+            $vehicleBrand = $this->applyTenantScope(VehicleBrand::where('id', $id), $user)->first();
 
             if (! $vehicleBrand) {
                 return [
@@ -115,16 +120,16 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve vehicle brand: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve vehicle brand: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function update(int $id, array $data): array
+    public function update(int $id, User $user, array $data): array
     {
         try {
-            $vehicleBrand = VehicleBrand::find($id);
+            $vehicleBrand = $this->applyTenantScope(VehicleBrand::where('id', $id), $user)->first();
 
             if (! $vehicleBrand) {
                 return [
@@ -152,16 +157,16 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update vehicle brand: ' . $e->getMessage(),
+                'message' => 'Failed to update vehicle brand: '.$e->getMessage(),
                 'status' => 500,
             ];
         }
     }
 
-    public function destroy(int $id): array
+    public function destroy(int $id, User $user): array
     {
         try {
-            $vehicleBrand = VehicleBrand::find($id);
+            $vehicleBrand = $this->applyTenantScope(VehicleBrand::where('id', $id), $user)->first();
 
             if (! $vehicleBrand) {
                 return [
@@ -182,7 +187,7 @@ class VehicleBrandService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete vehicle brand: ' . $e->getMessage(),
+                'message' => 'Failed to delete vehicle brand: '.$e->getMessage(),
                 'status' => 500,
             ];
         }

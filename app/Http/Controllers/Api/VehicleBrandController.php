@@ -17,6 +17,7 @@ class VehicleBrandController extends Controller
     {
         try {
             $result = $this->vehicleBrandService->index(
+                $request->user(),
                 $request->input('vehicle_type_id'),
                 $request->input('per_page', 15)
             );
@@ -43,10 +44,10 @@ class VehicleBrandController extends Controller
         }
     }
 
-    public function listByType(int $vehicleTypeId): JsonResponse
+    public function listByType(Request $request, int $vehicleTypeId): JsonResponse
     {
         try {
-            $result = $this->vehicleBrandService->listByType($vehicleTypeId);
+            $result = $this->vehicleBrandService->listByType($request->user(), $vehicleTypeId);
 
             return response()->json([
                 'success' => $result['success'],
@@ -90,10 +91,10 @@ class VehicleBrandController extends Controller
         }
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleBrandService->show($id);
+            $result = $this->vehicleBrandService->show($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],
@@ -121,7 +122,7 @@ class VehicleBrandController extends Controller
                 'logo.uploaded' => 'The logo failed to upload. The file size likely exceeds the server limit (check php.ini upload_max_filesize, usually 2MB).',
             ]);
 
-            $result = $this->vehicleBrandService->update($id, $validated);
+            $result = $this->vehicleBrandService->update($id, $request->user(), $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -137,10 +138,10 @@ class VehicleBrandController extends Controller
         }
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleBrandService->destroy($id);
+            $result = $this->vehicleBrandService->destroy($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],

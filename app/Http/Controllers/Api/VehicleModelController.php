@@ -11,13 +11,13 @@ class VehicleModelController extends Controller
 {
     public function __construct(
         protected VehicleModelService $vehicleModelService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
             $result = $this->vehicleModelService->index(
+                $request->user(),
                 $request->input('vehicle_brand_id'),
                 $request->input('per_page', 15)
             );
@@ -44,10 +44,10 @@ class VehicleModelController extends Controller
         }
     }
 
-    public function listByBrand(int $vehicleBrandId): JsonResponse
+    public function listByBrand(Request $request, int $vehicleBrandId): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->listByBrand($vehicleBrandId);
+            $result = $this->vehicleModelService->listByBrand($request->user(), $vehicleBrandId);
 
             return response()->json([
                 'success' => $result['success'],
@@ -72,13 +72,8 @@ class VehicleModelController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $user = $request->user();
+            $result = $this->vehicleModelService->store($validated, $request->user());
 
-            $result = $this->vehicleModelService->store(
-                $validated,
-                $user->org_id,
-                $user->branch_id
-            );
             return response()->json([
                 'success' => $result['success'],
                 'message' => $result['message'],
@@ -93,10 +88,10 @@ class VehicleModelController extends Controller
         }
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->show($id);
+            $result = $this->vehicleModelService->show($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],
@@ -121,7 +116,7 @@ class VehicleModelController extends Controller
                 'is_active' => ['sometimes', 'boolean'],
             ]);
 
-            $result = $this->vehicleModelService->update($id, $validated);
+            $result = $this->vehicleModelService->update($id, $request->user(), $validated);
 
             return response()->json([
                 'success' => $result['success'],
@@ -137,10 +132,10 @@ class VehicleModelController extends Controller
         }
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $result = $this->vehicleModelService->destroy($id);
+            $result = $this->vehicleModelService->destroy($id, $request->user());
 
             return response()->json([
                 'success' => $result['success'],
