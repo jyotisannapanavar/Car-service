@@ -25,6 +25,19 @@ class VehicleBrand extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['logo_url'];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo) {
+            return null;
+        }
+        if (filter_var($this->logo, FILTER_VALIDATE_URL)) {
+            return $this->logo;
+        }
+        return asset('storage/' . $this->logo);
+    }
+
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'org_id');

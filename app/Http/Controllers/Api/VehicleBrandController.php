@@ -70,9 +70,11 @@ class VehicleBrandController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'logo.uploaded' => 'The logo failed to upload. The file size likely exceeds the server limit (check php.ini upload_max_filesize, usually 2MB).',
             ]);
 
-        $result = $this->vehicleBrandService->store($validated, $request);
+            $result = $this->vehicleBrandService->store($validated, $request);
 
             return response()->json([
                 'success' => $result['success'],
@@ -113,8 +115,10 @@ class VehicleBrandController extends Controller
             $validated = $request->validate([
                 'vehicle_type_id' => ['required', 'exists:vehicle_types,id'],
                 'name' => ['required', 'string', 'max:255'],
-                'logo' => ['nullable', 'string', 'max:255'],
+                'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'is_active' => ['sometimes', 'boolean'],
+            ], [
+                'logo.uploaded' => 'The logo failed to upload. The file size likely exceeds the server limit (check php.ini upload_max_filesize, usually 2MB).',
             ]);
 
             $result = $this->vehicleBrandService->update($id, $validated);
