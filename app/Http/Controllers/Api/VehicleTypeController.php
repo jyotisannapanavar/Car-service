@@ -16,7 +16,7 @@ class VehicleTypeController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->vehicleTypeService->index($request->user(), $request->input('per_page', 15));
+            $result = $this->vehicleTypeService->index($request->user(), $request->input('search'), $request->input('per_page', 15));
 
             $response = [
                 'success' => $result['success'],

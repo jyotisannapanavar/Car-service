@@ -19,6 +19,7 @@ class VehicleBrandController extends Controller
             $result = $this->vehicleBrandService->index(
                 $request->user(),
                 $request->input('vehicle_type_id'),
+                $request->input('search'),
                 $request->input('per_page', 15)
             );
 

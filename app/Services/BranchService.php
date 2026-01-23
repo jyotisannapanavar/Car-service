@@ -11,10 +11,19 @@ use Exception;
 
 class BranchService
 {
-    public function index(int $perPage = 15): array
+    public function index(int $orgId, ?string $search = null, int $perPage = 15): array
     {
         try {
-            $branches = Branch::latest()->paginate($perPage);
+            $query = Branch::where('org_id', $orgId);
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            }
+
+            $branches = $query->latest()->paginate($perPage);
 
 
             return [
@@ -53,12 +62,12 @@ class BranchService
             $orgId = $data['branch']['org_id'] ?? $authUser->org_id;
 
             $branch = Branch::create([
-                'org_id'   => $orgId,
-                'name'     => $data['branch']['name'],
-                'code'     => $data['branch']['code'] ?? null,
-                'email'    => $data['branch']['email'] ?? null,
-                'phone'    => $data['branch']['phone'] ?? null,
-                'address'  => $data['branch']['address'] ?? null,
+                'org_id' => $orgId,
+                'name' => $data['branch']['name'],
+                'code' => $data['branch']['code'] ?? null,
+                'email' => $data['branch']['email'] ?? null,
+                'phone' => $data['branch']['phone'] ?? null,
+                'address' => $data['branch']['address'] ?? null,
                 'is_active' => $data['branch']['is_active'] ?? true,
             ]);
 
@@ -66,13 +75,13 @@ class BranchService
              * 2️⃣ Create Branch Admin User
              */
             $user = User::create([
-                'name'      => $data['user']['name'],
-                'email'     => $data['user']['email'] ?? null,
-                'phone'     => $data['user']['phone'] ?? null,
-                'org_id'    => $orgId,
+                'name' => $data['user']['name'],
+                'email' => $data['user']['email'] ?? null,
+                'phone' => $data['user']['phone'] ?? null,
+                'org_id' => $orgId,
                 'branch_id' => $branch->id,
-                'password'  => Hash::make($data['user']['password']),
-                'role'      => 'branch_admin',
+                'password' => Hash::make($data['user']['password']),
+                'role' => 'branch_admin',
                 'is_active' => true,
             ]);
 
@@ -83,7 +92,7 @@ class BranchService
                 'message' => 'Branch and branch admin created successfully',
                 'data' => [
                     'branch' => $branch,
-                    'user'   => $user,
+                    'user' => $user,
                 ],
                 'status' => 201,
             ];
@@ -107,7 +116,7 @@ class BranchService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch not found',
@@ -139,7 +148,7 @@ class BranchService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch not found',
@@ -171,7 +180,7 @@ class BranchService
                 ->where('org_id', $orgId)
                 ->first();
 
-            if (! $branch) {
+            if (!$branch) {
                 return [
                     'success' => false,
                     'message' => 'Branch not found',

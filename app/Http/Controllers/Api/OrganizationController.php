@@ -17,7 +17,7 @@ class OrganizationController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $result = $this->organizationService->index($request->input('per_page', 15));
+            $result = $this->organizationService->index($request->input('search'), $request->input('per_page', 15));
 
             $response = [
                 'success' => $result['success'],

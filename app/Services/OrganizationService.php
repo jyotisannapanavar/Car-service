@@ -7,10 +7,19 @@ use Exception;
 
 class OrganizationService
 {
-    public function index(int $perPage = 15): array
+    public function index(?string $search = null, int $perPage = 15): array
     {
         try {
-            $organizations = Organization::orderBy('name')->paginate($perPage);
+            $query = Organization::query();
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('address', 'like', "%{$search}%");
+                });
+            }
+
+            $organizations = $query->orderBy('name')->paginate($perPage);
 
             return [
                 'success' => true,
@@ -29,7 +38,7 @@ class OrganizationService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve organizations: '.$e->getMessage(),
+                'message' => 'Failed to retrieve organizations: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -49,7 +58,7 @@ class OrganizationService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create organization: '.$e->getMessage(),
+                'message' => 'Failed to create organization: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -60,7 +69,7 @@ class OrganizationService
         try {
             $organization = Organization::find($id);
 
-            if (! $organization) {
+            if (!$organization) {
                 return [
                     'success' => false,
                     'message' => 'Organization not found',
@@ -79,7 +88,7 @@ class OrganizationService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve organization: '.$e->getMessage(),
+                'message' => 'Failed to retrieve organization: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -90,7 +99,7 @@ class OrganizationService
         try {
             $organization = Organization::find($id);
 
-            if (! $organization) {
+            if (!$organization) {
                 return [
                     'success' => false,
                     'message' => 'Organization not found',
@@ -109,7 +118,7 @@ class OrganizationService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update organization: '.$e->getMessage(),
+                'message' => 'Failed to update organization: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -120,7 +129,7 @@ class OrganizationService
         try {
             $organization = Organization::find($id);
 
-            if (! $organization) {
+            if (!$organization) {
                 return [
                     'success' => false,
                     'message' => 'Organization not found',
@@ -139,7 +148,7 @@ class OrganizationService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete organization: '.$e->getMessage(),
+                'message' => 'Failed to delete organization: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }

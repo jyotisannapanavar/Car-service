@@ -11,10 +11,17 @@ class ServiceService
 {
     use TenantScope;
 
-    public function index(User $user, int $perPage = 15): array
+    public function index(User $user, ?string $search = null, int $perPage = 15): array
     {
         try {
             $query = $this->applyTenantScope(Service::query(), $user);
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
 
             $services = $query->orderBy('name')->paginate($perPage);
 

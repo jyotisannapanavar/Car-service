@@ -12,13 +12,19 @@ class VehicleModelService
 {
     use TenantScope;
 
-    public function index(User $user, ?int $vehicleBrandId = null, int $perPage = 15): array
+    public function index(User $user, ?int $vehicleBrandId = null, ?string $search = null, int $perPage = 15): array
     {
         try {
             $query = $this->applyTenantScope(VehicleModel::query(), $user);
 
             if ($vehicleBrandId) {
                 $query->where('vehicle_brand_id', $vehicleBrandId);
+            }
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             }
 
             $vehicleModels = $query->orderBy('name')->paginate($perPage);

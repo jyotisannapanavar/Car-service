@@ -8,7 +8,7 @@ use Exception;
 
 class VehicleServicePricingService
 {
-    public function index(int $orgId, ?int $branchId = null, ?int $serviceId = null, int $perPage = 15): array
+    public function index(int $orgId, ?int $branchId = null, ?int $serviceId = null, ?string $search = null, int $perPage = 15): array
     {
         try {
             if (!$branchId) {
@@ -35,6 +35,24 @@ class VehicleServicePricingService
 
             if ($serviceId) {
                 $query->where('service_id', $serviceId);
+            }
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('price', 'like', "%{$search}%")
+                        ->orWhereHas('service', function ($sq) use ($search) {
+                            $sq->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('vehicleType', function ($vq) use ($search) {
+                            $vq->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('vehicleBrand', function ($vq) use ($search) {
+                            $vq->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('vehicleModel', function ($vq) use ($search) {
+                            $vq->where('name', 'like', "%{$search}%");
+                        });
+                });
             }
 
             $pricing = $query->with(['service', 'vehicleType', 'vehicleBrand', 'vehicleModel'])

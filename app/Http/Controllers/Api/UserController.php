@@ -19,6 +19,7 @@ class UserController extends Controller
         try {
             $result = $this->userService->index(
                 $request->user(),
+                $request->input('search'),
                 $request->input('per_page', 15)
             );
 

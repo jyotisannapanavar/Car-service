@@ -22,6 +22,7 @@ class VehicleServicePricingController extends Controller
                 $user->org_id,
                 $request->input('branch_id', $user->branch_id),
                 $request->input('service_id'),
+                $request->input('search'),
                 $request->input('per_page', 15)
             );
 

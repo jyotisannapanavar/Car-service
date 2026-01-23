@@ -15,13 +15,15 @@ class BranchController extends Controller
 {
     public function __construct(
         protected BranchService $branchService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
         try {
             $result = $this->branchService->index(
-                // $request->user()->org_id,
+                $request->user()->org_id,
+                $request->input('search'),
                 $request->input('per_page', 15)
             );
 
@@ -53,19 +55,19 @@ class BranchController extends Controller
         try {
             $validated = $request->validate([
                 // Branch
-                'branch.org_id'   => ['nullable', 'exists:organizations,id'],
-                'branch.name'     => ['required', 'string', 'max:255'],
-                'branch.code'     => ['nullable', 'string', 'max:50'],
-                'branch.email'    => ['nullable', 'email', 'max:255'],
-                'branch.phone'    => ['nullable', 'string', 'max:20'],
-                'branch.address'  => ['nullable', 'string'],
+                'branch.org_id' => ['nullable', 'exists:organizations,id'],
+                'branch.name' => ['required', 'string', 'max:255'],
+                'branch.code' => ['nullable', 'string', 'max:50'],
+                'branch.email' => ['nullable', 'email', 'max:255'],
+                'branch.phone' => ['nullable', 'string', 'max:20'],
+                'branch.address' => ['nullable', 'string'],
                 'branch.is_active' => ['sometimes', 'boolean'],
 
                 // User
                 'user.name' => ['required', 'string', 'max:255'],
                 'user.email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
                 'user.phone' => ['nullable', 'string', 'max:20'],
-                'user.password'  => ['required', 'string', 'min:6'],
+                'user.password' => ['required', 'string', 'min:6'],
             ]);
 
             $result = $this->branchService->store(

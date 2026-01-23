@@ -18,6 +18,7 @@ class ServiceController extends Controller
         try {
             $result = $this->serviceService->index(
                 $request->user(),
+                $request->input('search'),
                 $request->input('per_page', 15)
             );
 
