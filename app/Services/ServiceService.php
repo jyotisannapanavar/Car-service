@@ -16,6 +16,7 @@ class ServiceService
         try {
             $query = $this->applyTenantScope(Service::query(), $user);
 
+
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -42,7 +43,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'message' => 'Failed to retrieve services: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -65,7 +66,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve services: '.$e->getMessage(),
+                'message' => 'Failed to retrieve services: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -85,7 +86,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to create service: '.$e->getMessage(),
+                'message' => 'Failed to create service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -96,7 +97,7 @@ class ServiceService
         try {
             $service = $this->applyTenantScope(Service::where('id', $id), $user)->first();
 
-            if (! $service) {
+            if (!$service) {
                 return [
                     'success' => false,
                     'message' => 'Service not found',
@@ -115,7 +116,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to retrieve service: '.$e->getMessage(),
+                'message' => 'Failed to retrieve service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -126,7 +127,7 @@ class ServiceService
         try {
             $service = $this->applyTenantScope(Service::where('id', $id), $user)->first();
 
-            if (! $service) {
+            if (!$service) {
                 return [
                     'success' => false,
                     'message' => 'Service not found',
@@ -145,7 +146,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to update service: '.$e->getMessage(),
+                'message' => 'Failed to update service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
@@ -156,7 +157,7 @@ class ServiceService
         try {
             $service = $this->applyTenantScope(Service::where('id', $id), $user)->first();
 
-            if (! $service) {
+            if (!$service) {
                 return [
                     'success' => false,
                     'message' => 'Service not found',
@@ -175,7 +176,7 @@ class ServiceService
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to delete service: '.$e->getMessage(),
+                'message' => 'Failed to delete service: ' . $e->getMessage(),
                 'status' => 500,
             ];
         }
